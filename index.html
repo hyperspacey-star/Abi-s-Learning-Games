@@ -6,9 +6,9 @@
     <style>
         body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #fce4ec; text-align: center; margin: 0; touch-action: manipulation; }
         h1 { color: #880e4f; font-size: 42px; margin-top: 30px; letter-spacing: 2px; }
-        p { font-size: 24px; color: #555; }
+        p { font-size: 24px; color: #555; margin-bottom: 10px; }
         
-        .hub-container { max-width: 600px; margin: 30px auto; display: flex; flex-direction: column; gap: 25px; padding: 20px; }
+        .hub-container { max-width: 600px; margin: 20px auto; display: flex; flex-direction: column; gap: 25px; padding: 20px; }
         
         .game-btn {
             background-color: white;
@@ -23,6 +23,7 @@
             align-items: center;
             justify-content: center;
             transition: transform 0.1s;
+            position: relative; /* Needed for the badge */
         }
         
         .game-btn:active { transform: translateY(4px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -31,6 +32,42 @@
         .btn-vocab { border-color: #ff4081; color: #c2185b; }
         .btn-audio { border-color: #03a9f4; color: #0277bd; }
         .btn-math { border-color: #4caf50; color: #2e7d32; }
+        .btn-therapy { border-color: #673ab7; color: #4527a0; background-color: #ede7f6; }
+        
+        /* Headphone Badge */
+        .badge {
+            position: absolute;
+            top: -15px;
+            right: -10px;
+            background-color: #ff5252;
+            color: white;
+            font-size: 16px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border: 2px solid white;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+
+        .section-divider {
+            width: 100%;
+            border-top: 3px dashed #f48fb1;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .section-title {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fce4ec;
+            padding: 0 15px;
+            color: #d81b60;
+            font-size: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -55,7 +92,16 @@
         <a href="math-shop.html" class="game-btn btn-math">
             🧁 Sweet Shop Math
         </a>
-        
+
+        <div class="section-divider">
+            <div class="section-title">Brain Training</div>
+        </div>
+
+        <a href="alien-code.html" class="game-btn btn-therapy">
+            <div class="badge">🎧 HEADPHONES REQUIRED!</div>
+            🛸 Alien Code Breaker
+        </a>
+
     </div>
 
 </body>
