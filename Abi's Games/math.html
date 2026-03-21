@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Beginner Deck Builder Fractions - Level Up!</title>
+    <style>
+        body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #e8f5e9; text-align: center; margin: 0; }
+        h1 { color: #2e7d32; font-size: 32px; margin-bottom: 5px; }
+        
+        .card { background-color: white; padding: 25px; border-radius: 15px; margin: 10px auto; max-width: 800px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
+        
+        .scroll-container { 
+            width: 100%; 
+            display: flex;
+            justify-content: center;
+            padding: 40px 0; 
+            margin: 20px 0;
+        }
+        
+        .number-line { 
+            display: inline-flex; 
+            align-items: flex-end; 
+            position: relative; 
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .zero-marker {
+            position: absolute;
+            bottom: -35px;
+            left: 18px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .whole-unit {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .block-row {
+            display: flex;
+            height: 80px; 
+            border-top: 6px solid #8d6e63;
+            border-bottom: 8px solid #333; 
+        }
+
+        .segment {
+            width: 80px; 
+            border-right: 3px dashed #bcaaa4;
+            background-color: #fff3e0;
+            box-sizing: border-box;
+        }
+
+        .segment.painted {
+            background-color: #ff9800; 
+            border-right: 3px solid #e65100;
+        }
+
+        .whole-unit .segment:last-child {
+            border-right: 6px solid #333; 
+        }
+
+        .unit-label {
+            position: absolute;
+            bottom: -35px;
+            right: -10px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .input-area { margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        
+        .fraction-box { display: flex; flex-direction: column; align-items: center; width: 100px; }
+        
+        input[type="number"] { 
+            font-size: 36px; 
+            padding: 10px; 
+            text-align: center; 
+            width: 80px; 
+            border-radius: 10px; 
+            border: 3px solid #4CAF50; 
+            background-color: #f1f8e9;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        hr.fraction-line { width: 100%; border: 3px solid #333; margin: 10px 0; }
+        
+        button { background-color: #ff5722; color: white; padding: 15px 30px; font-size: 24px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        button:active { transform: translateY(2px); box-shadow: none; }
+        .btn-green { background-color: #4CAF50; }
+        
+        #feedback { font-size: 28px; font-weight: bold; margin-top: 20px; min-height: 40px; }
+        #streakDisplay { font-size: 26px; color: #ff9800; font-weight: bold; margin-top: 10px; }
+        #levelUpMsg { font-size: 24px; color: #e91e63; font-weight: bold; margin-top: 10px; display: none; }
+        
+        .hint { font-size: 20px; color: #555; margin-top: 25px; background-color: #f9f9f9; padding: 15px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>🪵 Deck Builder Fractions!</h1>
+        <p style="font-size: 22px; margin-top: 0;">What fraction of the planks are painted orange?</p>
+        
+        <div id="streakDisplay">🔥 Streak: 0</div>
+        <div id="levelUpMsg">⭐ LEVEL 2 UNLOCKED! Tricky placements ahead! ⭐</div>
+
+        <div class="scroll-container">
+            <div class="number-line" id="deckContainer">
+                </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="fraction-box">
+                <input type="number" id="numInput" pattern="[0-9]*" inputmode="numeric" placeholder="?">
+                <hr class="fraction-line">
+                <input type="number" id="denInput" pattern="[0-9]*" inputmode="numeric" placeholder="?">
+            </div>
+            <button class="btn-green" id="checkBtn" onclick="checkAnswer()">Check!</button>
+            <button id="nextBtn" style="display: none;" onclick="generatePuzzle()">Next Puzzle ➡️</button>
+        </div>
+
+        <div id="feedback"></div>
+        <div class="hint">
+            <strong>Hint:</strong><br>
+            Top number = How many pieces are painted orange?<br>
+            Bottom number = How many total pieces make up the whole block?
+        </div>
+    </div>
+
+    <script>
+        let currentNumerator = 0;
+        let currentDenominator = 0;
+        let streak = 0;
+
+        function generatePuzzle() {
+            document.getElementById('numInput').value = "";
+            document.getElementById('denInput').value = "";
+            document.getElementById('feedback').innerText = "";
+            document.getElementById('checkBtn').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('numInput').focus();
+
+            // Beginner level: Always exactly 1 whole block
+            let wholeBlocks = 1; 
+            
+            // Divided into 2 to 8 total segments (denominator)
+            currentDenominator = Math.floor(Math.random() * 7) + 2; 
+            
+            // Random number of shaded segments (numerator)
+            currentNumerator = Math.floor(Math.random() * (currentDenominator - 1)) + 1;
+
+            // Determine if Level 2 is active (Streak of 5 or more)
+            let offset = 0;
+            if (streak >= 5) {
+                document.getElementById('levelUpMsg').style.display = 'block';
+                // Level 2 logic: Start painting planks at a random offset instead of block 0
+                let maxOffset = currentDenominator - currentNumerator;
+                if (maxOffset > 0) {
+                    offset = Math.floor(Math.random() * maxOffset) + 1; // Unpainted blanks before the orange ones
+                }
+            } else {
+                document.getElementById('levelUpMsg').style.display = 'none';
+            }
+
+            const container = document.getElementById('deckContainer');
+            container.innerHTML = '<div class="zero-marker">0</div>'; 
+
+            let drawnSegments = 0;
+
+            for (let i = 1; i <= wholeBlocks; i++) {
+                let unitDiv = document.createElement('div');
+                unitDiv.className = 'whole-unit';
+
+                let blockRow = document.createElement('div');
+                blockRow.className = 'block-row';
+
+                for (let j = 0; j < currentDenominator; j++) {
+                    let segment = document.createElement('div');
+                    segment.className = 'segment';
+                    
+                    // Check if the current segment falls within the painted range
+                    if (drawnSegments >= offset && drawnSegments < (offset + currentNumerator)) {
+                        segment.classList.add('painted');
+                    }
+                    drawnSegments++;
+                    blockRow.appendChild(segment);
+                }
+
+                let label = document.createElement('div');
+                label.className = 'unit-label';
+                label.innerText = i; 
+
+                unitDiv.appendChild(blockRow);
+                unitDiv.appendChild(label);
+                container.appendChild(unitDiv);
+            }
+        }
+
+        function checkAnswer() {
+            let guessNum = parseInt(document.getElementById('numInput').value);
+            let guessDen = parseInt(document.getElementById('denInput').value);
+            let feedbackEl = document.getElementById('feedback');
+
+            if (isNaN(guessNum) || isNaN(guessDen)) {
+                feedbackEl.innerText = "Please fill in both boxes!";
+                feedbackEl.style.color = "#ff5722";
+                return;
+            }
+
+            if (guessNum === currentNumerator && guessDen === currentDenominator) {
+                feedbackEl.innerText = "✅ Spot on! Great counting!";
+                feedbackEl.style.color = "#4CAF50";
+                streak++;
+                document.getElementById('streakDisplay').innerText = `🔥 Streak: ${streak}`;
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'block';
+            } else {
+                feedbackEl.innerText = "❌ Not quite! Try counting them again.";
+                feedbackEl.style.color = "#e53935";
+                streak = 0;
+                document.getElementById('streakDisplay').innerText = `🔥 Streak: ${streak}`;
+            }
+        }
+
+        generatePuzzle();
+    </script>
+</body>
+</html>
