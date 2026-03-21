@@ -4,7 +4,6 @@
     h2 { color: #1e90ff; margin-top: 0; }
     
     .card { background-color: white; padding: 30px; border-radius: 15px; margin: 20px auto; max-width: 700px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
-    textarea { width: 90%; height: 120px; font-size: 20px; padding: 15px; border-radius: 10px; border: 2px solid #ccc; }
     
     button { background-color: #32cd32; color: white; padding: 20px 30px; font-size: 24px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 15px; }
     button:active { transform: translateY(2px); box-shadow: none; }
@@ -23,8 +22,7 @@
 
 <div id="setupScreen" class="card">
     <h1>📝 Vocab Master</h1>
-    <p style="font-size: 20px;">Paste the 13 vocab words here:</p>
-    <textarea id="wordInput" placeholder="apple&#10;banana&#10;orange"></textarea><br>
+    <p style="font-size: 24px;">Ready for this week's spelling challenge?</p>
     <button class="btn-pink" onclick="startRound(1)">Start Round 1</button>
 </div>
 
@@ -61,7 +59,25 @@
 </div>
 
 <script>
-    let words = [];
+    // 👇 EDIT YOUR WEEKLY WORDS RIGHT HERE 👇
+    // Make sure each word has quotes around it and a comma after it!
+    let words = [
+        "gathered",
+        "grateful",
+        "garden",
+        "grass",
+        "again",
+        "gear",
+        "great",
+        "guest",
+        "goalie",
+        "generous",
+        "engine",
+        "giraffe",
+        "giant"
+    ];
+    // 👆 --------------------------------- 👆
+
     let currentRound = 1;
     let wordIndex = 0;
     let lightningFirstTries = 0;
@@ -70,15 +86,6 @@
     let countdownInterval;
 
     function startRound(roundNum) {
-        if (roundNum === 1) {
-            let text = document.getElementById('wordInput').value;
-            words = text.split('\n').map(w => w.trim()).filter(w => w.length > 0);
-            if (words.length === 0) {
-                alert("Please enter some words first!");
-                return;
-            }
-        }
-
         currentRound = roundNum;
         wordIndex = 0;
         
@@ -141,7 +148,6 @@
             feedbackEl.innerText = "✅ Awesome! Correct!";
             feedbackEl.style.color = "#32cd32";
             
-            // Track first tries for round 2
             if (currentRound === 2 && attemptsThisWord === 1) {
                 lightningFirstTries++;
             }
