@@ -12,7 +12,7 @@
         #livesDisplay { font-size: 40px; margin: 10px 0; min-height: 50px; }
         
         #wordDisplay { 
-            font-size: 48px; font-weight: bold; color: #333; letter-spacing: 10px; margin: 30px 0; min-height: 70px; font-family: monospace;
+            font-size: 48px; font-weight: bold; color: #333; letter-spacing: 10px; margin: 20px 0; min-height: 70px; font-family: monospace;
         }
         
         .btn-audio { 
@@ -27,7 +27,6 @@
         .key:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
         .key:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
         
-        /* Flash animations instead of permanent colors */
         .key.flash-correct { background-color: #c8e6c9 !important; border-color: #4caf50 !important; color: #2e7d32 !important; }
         .key.flash-wrong { background-color: #ffcdd2 !important; border-color: #f44336 !important; color: #c62828 !important; }
 
@@ -36,7 +35,8 @@
         .btn-start { background-color: #d84315; color: white; padding: 20px 40px; font-size: 28px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; margin-top: 30px; box-shadow: 0 5px 0 #bf360c; }
         .btn-start:active { transform: translateY(5px); box-shadow: none; }
 
-        #message { font-size: 28px; font-weight: bold; margin-top: 20px; min-height: 40px; color: #ff9800; }
+        #message { font-size: 28px; font-weight: bold; margin-top: 10px; min-height: 40px; color: #ff9800; }
+        #clueDisplay { font-size: 24px; font-weight: bold; color: #1976d2; min-height: 35px; margin-top: 5px; }
         
         .mode-badge { background-color: #ff5252; color: white; padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; letter-spacing: 2px; display: inline-block; margin-bottom: 10px; }
     </style>
@@ -54,7 +54,10 @@
         <div id="livesDisplay">❤️❤️❤️❤️❤️❤️</div>
         <button class="btn-audio" onclick="playAudio()">🔊 Hear Word Again</button>
         <div id="wordDisplay">_ _ _ _ _</div>
+        
+        <div id="clueDisplay"></div>
         <div id="message"></div>
+        
         <div id="keyboard"></div>
         <button id="nextBtn" class="btn-start" style="display: none; margin-left: auto; margin-right: auto; margin-top: 20px; background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32;" onclick="nextWord()">Next Word ➡️</button>
     </div>
@@ -88,6 +91,7 @@
         let currentWord = "";
         let currentLetterIndex = 0; 
         let mistakes = 0;
+        let mistakesOnCurrentLetter = 0; // Tracks consecutive mistakes for the clue
         const maxMistakes = 6;
         let audioCtx;
 
@@ -108,9 +112,11 @@
             currentWord = words[currentWordIndex].toUpperCase();
             currentLetterIndex = 0;
             mistakes = 0;
+            mistakesOnCurrentLetter = 0;
             
             document.getElementById('nextBtn').style.display = 'none';
             document.getElementById('message').innerText = "";
+            document.getElementById('clueDisplay').innerText = "";
             document.getElementById('keyboard').style.pointerEvents = "auto";
             
             updateLivesDisplay();
@@ -126,31 +132,58 @@
             utterance.rate = 0.85; 
             window.speechSynthesis.speak(utterance);
         }
-
-        function playFartSound() {
+        
+        // --- Custom Synthesizer Sounds ---
+        function playDing() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
             let osc = audioCtx.createOscillator();
             let gain = audioCtx.createGain();
-            
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             
-            // A sawtooth wave gives that nice buzzy texture
+            osc.type = 'sine'; // Smooth, pure tone
+            osc.frequency.setValueAtTime(1000, audioCtx.currentTime); // High pitch
+            
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function playWrongBuzz() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'sawtooth'; // Buzzy, harsh tone
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime); // Low pitch
+            
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function playFartSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
             osc.type = 'sawtooth';
             
-            // Start at 100Hz and drop down to a flabby 30Hz over 2.5 seconds
             osc.frequency.setValueAtTime(100, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 2.5);
             
             gain.gain.setValueAtTime(1, audioCtx.currentTime);
             
-            // Modulate the volume to make it "sputter"
             for(let i = 0.1; i < 2.5; i += 0.1) {
                 gain.gain.setValueAtTime(Math.random() * 0.8 + 0.2, audioCtx.currentTime + i);
             }
-            
-            // Fade out at the very end
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2.5);
             
             osc.start(audioCtx.currentTime);
@@ -186,9 +219,10 @@
             for(let i=0; i<mistakes; i++) { heartString += "🖤"; }
             document.getElementById('livesDisplay').innerText = heartString;
 
-            if (livesLeft === 0) {
+            if (livesLeft <= 0) {
                 document.getElementById('message').innerText = "❌ The word was: " + currentWord;
                 document.getElementById('message').style.color = "#f44336";
+                document.getElementById('clueDisplay').innerText = ""; // Clear clue on game over
                 document.getElementById('keyboard').style.pointerEvents = "none";
                 document.getElementById('wordDisplay').innerText = currentWord.split('').join(' ');
                 document.getElementById('nextBtn').style.display = 'block';
@@ -203,18 +237,30 @@
             let expectedLetter = currentWord[currentLetterIndex];
 
             if (letter === expectedLetter) {
-                // Correct letter in the correct order!
+                playDing();
                 btnElement.classList.add('flash-correct');
                 setTimeout(() => { btnElement.classList.remove('flash-correct'); }, 300);
                 
                 currentLetterIndex++;
+                mistakesOnCurrentLetter = 0; // Reset consecutive mistakes
+                document.getElementById('clueDisplay').innerText = ""; // Hide clue
+                
                 updateWordDisplay();
             } else {
-                // Wrong letter, or right letter in the wrong order
+                playWrongBuzz();
                 btnElement.classList.add('flash-wrong');
                 setTimeout(() => { btnElement.classList.remove('flash-wrong'); }, 300);
                 
                 mistakes++;
+                mistakesOnCurrentLetter++;
+                
+                // Show clue if they miss twice on the exact same letter
+                if (mistakesOnCurrentLetter >= 2 && mistakes < maxMistakes) {
+                    const vowels = ['A', 'E', 'I', 'O', 'U'];
+                    const isVowel = vowels.includes(expectedLetter);
+                    document.getElementById('clueDisplay').innerText = isVowel ? "💡 Hint: The next letter is a VOWEL!" : "💡 Hint: The next letter is a CONSONANT!";
+                }
+
                 updateLivesDisplay();
             }
         }
