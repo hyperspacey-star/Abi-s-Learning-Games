@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grammar Detective</title>
+    <style>
+        body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #fffde7; text-align: center; margin: 0; touch-action: manipulation; }
+        h1 { color: #f57f17; font-size: 36px; margin-top: 10px; margin-bottom: 5px; }
+        
+        .card { background-color: white; padding: 25px; border-radius: 20px; margin: 10px auto; max-width: 800px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border: 3px solid #fbc02d; }
+        
+        .instruction { font-size: 22px; color: #555; margin-bottom: 20px; }
+        
+        /* Sentence Area */
+        #sentenceArea { 
+            margin: 40px 0; 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 12px; 
+            font-size: 36px; 
+            align-items: center; 
+        }
+        
+        .word { 
+            padding: 8px 15px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            user-select: none; 
+            border: 3px solid transparent; 
+            background-color: #fafafa;
+        }
+        
+        .word:active { transform: scale(0.95); }
+        
+        .word.capitalized { 
+            background-color: #e3f2fd; 
+            border-color: #2196f3; 
+            color: #0d47a1; 
+            font-weight: bold; 
+            transform: translateY(-4px); 
+            box-shadow: 0 4px 0 #bbdefb;
+        }
+        
+        /* Punctuation Area */
+        .punc-label { font-size: 24px; font-weight: bold; color: #757575; margin-top: 30px; }
+        
+        #puncArea { margin: 15px 0 30px 0; display: flex; justify-content: center; gap: 20px; }
+        
+        .punc-btn { 
+            font-size: 45px; 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            border: 4px solid #e0e0e0; 
+            background-color: white; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            box-shadow: 0 5px 0 #e0e0e0; 
+            font-family: 'Comic Sans MS', Arial;
+        }
+        
+        .punc-btn.selected { 
+            border-color: #f57f17; 
+            background-color: #fff9c4; 
+            color: #e65100; 
+            transform: translateY(5px); 
+            box-shadow: 0 0 0 transparent; 
+        }
+
+        /* Action Buttons */
+        .btn-action { background-color: #4caf50; color: white; padding: 20px 40px; font-size: 28px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 5px 0 #2e7d32; transition: transform 0.1s; }
+        .btn-action:active { transform: translateY(5px); box-shadow: none; }
+        
+        #nextBtn { background-color: #2196f3; box-shadow: 0 5px 0 #1565c0; display: none; margin: 0 auto; }
+        
+        #feedback { font-size: 28px; font-weight: bold; margin-top: 20px; min-height: 40px; }
+        #streakDisplay { font-size: 24px; color: #ff9800; font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>🕵️‍♀️ Grammar Detective</h1>
+        <p class="instruction">Tap words to capitalize them. Then choose the right ending mark!</p>
+        
+        <div id="streakDisplay">🔥 Streak: 0</div>
+        
+        <div id="sentenceArea">
+            </div>
+
+        <div class="punc-label">How does it end?</div>
+        <div id="puncArea">
+            <button class="punc-btn" id="punc-period" onclick="selectPunc('.')">.</button>
+            <button class="punc-btn" id="punc-question" onclick="selectPunc('?')">?</button>
+            <button class="punc-btn" id="punc-exclaim" onclick="selectPunc('!')">!</button>
+        </div>
+
+        <button class="btn-action" id="checkBtn" onclick="checkAnswer()">Solve Case 🔍</button>
+        <button class="btn-action" id="nextBtn" onclick="nextSentence()">Next Case ➡️</button>
+
+        <div id="feedback"></div>
+    </div>
+
+    <script>
+        // 👇 EDIT YOUR SENTENCES HERE 👇
+        // text: The broken sentence (keep it all lowercase!)
+        // caps: Which words SHOULD be capitalized? (0 is the first word, 1 is the second, etc.)
+        // punc: The correct ending mark ('.', '?', or '!')
+        const cases = [
+            { text: "we went to the park on saturday", caps: [0, 6], punc: "." },
+            { text: "did abi see the dog", caps: [0, 1], punc: "?" },
+            { text: "wow that is a huge bug", caps: [0], punc: "!" },
+            { text: "i live in california", caps: [0, 3], punc: "." },
+            { text: "can we have pizza for dinner", caps: [0], punc: "?" },
+            { text: "dr smith is my dentist", caps: [0, 1], punc: "." }
+        ];
+        // 👆 ---------------------- 👆
+
+        let currentCaseIndex = 0;
+        let words = [];
+        let capitalizedIndexes = new Set();
+        let selectedPunc = "";
+        let streak = 0;
+
+        // Shuffle the cases so it's different every time
+        cases.sort(() => Math.random() - 0.5);
+
+        function loadSentence() {
+            let currentCase = cases[currentCaseIndex];
+            words = currentCase.text.split(" ");
+            capitalizedIndexes.clear();
+            selectedPunc = "";
+
+            // Reset UI
+            document.getElementById('feedback').innerText = "";
+            document.getElementById('checkBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            // Unselect punctuation buttons
+            document.getElementById('punc-period').classList.remove('selected');
+            document.getElementById('punc-question').classList.remove('selected');
+            document.getElementById('punc-exclaim').classList.remove('selected');
+
+            // Build the sentence
+            const area = document.getElementById('sentenceArea');
+            area.innerHTML = "";
+            
+            words.forEach((word, index) => {
+                let span = document.createElement('span');
+                span.className = 'word';
+                span.innerText = word;
+                span.onclick = () => toggleCap(index, span);
+                area.appendChild(span);
+            });
+        }
+
+        function toggleCap(index, element) {
+            let word = words[index];
+            if (capitalizedIndexes.has(index)) {
+                // Change to lowercase
+                capitalizedIndexes.delete(index);
+                element.innerText = word.toLowerCase();
+                element.classList.remove('capitalized');
+            } else {
+                // Change to uppercase
+                capitalizedIndexes.add(index);
+                element.innerText = word.charAt(0).toUpperCase() + word.slice(1);
+                element.classList.add('capitalized');
+            }
+        }
+
+        function selectPunc(mark) {
+            selectedPunc = mark;
+            document.getElementById('punc-period').classList.remove('selected');
+            document.getElementById('punc-question').classList.remove('selected');
+            document.getElementById('punc-exclaim').classList.remove('selected');
+
+            if(mark === '.') document.getElementById('punc-period').classList.add('selected');
+            if(mark === '?') document.getElementById('punc-question').classList.add('selected');
+            if(mark === '!') document.getElementById('punc-exclaim').classList.add('selected');
+        }
+
+        function checkAnswer() {
+            let currentCase = cases[currentCaseIndex];
+            let feedbackEl = document.getElementById('feedback');
+
+            if (selectedPunc === "") {
+                feedbackEl.innerText = "Don't forget to pick an ending mark!";
+                feedbackEl.style.color = "#f57f17";
+                return;
+            }
+
+            // Check if arrays match (they need to have the same items)
+            let correctCaps = currentCase.caps;
+            let playerCaps = Array.from(capitalizedIndexes);
+            
+            let isCapsCorrect = (correctCaps.length === playerCaps.length) && 
+                                correctCaps.every(val => playerCaps.includes(val));
+                                
+            let isPuncCorrect = (selectedPunc === currentCase.punc);
+
+            if (isCapsCorrect && isPuncCorrect) {
+                feedbackEl.innerText = "✅ Case Solved! Perfect grammar.";
+                feedbackEl.style.color = "#4caf50";
+                streak++;
+                document.getElementById('streakDisplay').innerText = `🔥 Streak: ${streak}`;
+                
+                document.getElementById('checkBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'block';
+                
+                // Disable clicking on words
+                document.querySelectorAll('.word').forEach(w => w.style.pointerEvents = 'none');
+                document.querySelectorAll('.punc-btn').forEach(b => b.style.pointerEvents = 'none');
+            } else {
+                streak = 0;
+                document.getElementById('streakDisplay').innerText = `🔥 Streak: ${streak}`;
+                
+                if (!isCapsCorrect && !isPuncCorrect) {
+                    feedbackEl.innerText = "❌ Check your capitals AND your ending mark!";
+                } else if (!isCapsCorrect) {
+                    feedbackEl.innerText = "❌ The ending is right, but check your capital letters!";
+                } else {
+                    feedbackEl.innerText = "❌ Capitals are perfect! But read the sentence out loud to check the ending mark.";
+                }
+                feedbackEl.style.color = "#f44336";
+            }
+        }
+
+        function nextSentence() {
+            currentCaseIndex++;
+            if (currentCaseIndex >= cases.length) {
+                // Restart and reshuffle
+                currentCaseIndex = 0;
+                cases.sort(() => Math.random() - 0.5);
+            }
+            loadSentence();
+        }
+
+        // Start game
+        loadSentence();
+    </script>
+</body>
+</html>
