@@ -1,7 +1,58 @@
-<a href="vocab.html" class="game-btn btn-vocab">
-    📝 Vocab Master
-</a>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abi's Learning Hub</title>
+    <style>
+        body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #fce4ec; text-align: center; margin: 0; touch-action: manipulation; }
+        h1 { color: #880e4f; font-size: 42px; margin-top: 30px; letter-spacing: 2px; }
+        p { font-size: 24px; color: #555; }
+        
+        .hub-container { max-width: 600px; margin: 30px auto; display: flex; flex-direction: column; gap: 25px; padding: 20px; }
+        
+        .game-btn {
+            background-color: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-decoration: none;
+            font-size: 32px;
+            font-weight: bold;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+            border: 5px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        
+        .game-btn:active { transform: translateY(4px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        /* Custom Button Colors */
+        .btn-vocab { border-color: #ff4081; color: #c2185b; }
+        .btn-audio { border-color: #03a9f4; color: #0277bd; }
+        .btn-math { border-color: #4caf50; color: #2e7d32; }
+    </style>
+</head>
+<body>
 
-<a href="math.html" class="game-btn btn-math">
-    🪵 Fraction Builder
-</a>
+    <h1>🌟 Abi's Game Hub! 🌟</h1>
+    <p>Choose your challenge:</p>
+
+    <div class="hub-container">
+        
+        <a href="vocab.html" class="game-btn btn-vocab">
+            📝 Vocab Master
+        </a>
+
+        <a href="spelling-audio.html" class="game-btn btn-audio">
+            🎧 Audio Spelling
+        </a>
+
+        <a href="math.html" class="game-btn btn-math">
+            🪵 Fraction Builder
+        </a>
+
+    </div>
+
+</body>
+</html>
