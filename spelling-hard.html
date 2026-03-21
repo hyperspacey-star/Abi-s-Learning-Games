@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Audio Spelling - HARD MODE</title>
+    <style>
+        body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #fbe9e7; text-align: center; margin: 0; touch-action: manipulation; }
+        h1 { color: #d84315; font-size: 36px; margin-top: 10px; margin-bottom: 5px; }
+        
+        .card { background-color: white; padding: 20px; border-radius: 15px; margin: 10px auto; max-width: 800px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 3px solid #ffab91; }
+        
+        #livesDisplay { font-size: 40px; margin: 10px 0; min-height: 50px; }
+        
+        #wordDisplay { 
+            font-size: 48px; font-weight: bold; color: #333; letter-spacing: 10px; margin: 30px 0; min-height: 70px; font-family: monospace;
+        }
+        
+        .btn-audio { 
+            background-color: #ff5722; color: white; padding: 15px 30px; font-size: 24px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; margin-left: auto; margin-right: auto; gap: 10px;
+        }
+        .btn-audio:active { transform: translateY(3px); box-shadow: none; }
+        
+        #keyboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .key { 
+            background-color: #fff; border: 3px solid #ffccbc; color: #d84315; font-size: 28px; font-weight: bold; width: 55px; height: 65px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #ffccbc; font-family: 'Comic Sans MS', Arial; transition: background-color 0.2s;
+        }
+        .key:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+        .key:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+        
+        /* Flash animations instead of permanent colors */
+        .key.flash-correct { background-color: #c8e6c9 !important; border-color: #4caf50 !important; color: #2e7d32 !important; }
+        .key.flash-wrong { background-color: #ffcdd2 !important; border-color: #f44336 !important; color: #c62828 !important; }
+
+        #gameArea, #endScreen { display: none; }
+        
+        .btn-start { background-color: #d84315; color: white; padding: 20px 40px; font-size: 28px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; margin-top: 30px; box-shadow: 0 5px 0 #bf360c; }
+        .btn-start:active { transform: translateY(5px); box-shadow: none; }
+
+        #message { font-size: 28px; font-weight: bold; margin-top: 20px; min-height: 40px; color: #ff9800; }
+        
+        .mode-badge { background-color: #ff5252; color: white; padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; letter-spacing: 2px; display: inline-block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card" id="startScreen">
+        <div class="mode-badge">🔥 HARD MODE 🔥</div>
+        <h1>🎧 Listen & Spell!</h1>
+        <p style="font-size: 20px; color: #555;">Warning: You must type the letters in the <strong>exact right order</strong>. Miss too many, and things might get... smelly.</p>
+        <button class="btn-start" onclick="startGame()">Start Game! ▶️</button>
+    </div>
+
+    <div class="card" id="gameArea">
+        <div id="livesDisplay">❤️❤️❤️❤️❤️❤️</div>
+        <button class="btn-audio" onclick="playAudio()">🔊 Hear Word Again</button>
+        <div id="wordDisplay">_ _ _ _ _</div>
+        <div id="message"></div>
+        <div id="keyboard"></div>
+        <button id="nextBtn" class="btn-start" style="display: none; margin-left: auto; margin-right: auto; margin-top: 20px; background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32;" onclick="nextWord()">Next Word ➡️</button>
+    </div>
+
+    <div class="card" id="endScreen">
+        <h1>🎉 YOU SURVIVED! 🎉</h1>
+        <p style="font-size: 24px;">You spelled all the words in Hard Mode!</p>
+        <button class="btn-start" onclick="location.reload()">Play Again 🔄</button>
+    </div>
+
+    <script>
+        // 👇 EDIT YOUR WEEKLY WORDS RIGHT HERE 👇
+        let words = [
+            "apple",
+            "banana",
+            "orange",
+            "grape",
+            "melon"
+        ];
+        // 👆 --------------------------------- 👆
+
+        let currentWordIndex = 0;
+        let currentWord = "";
+        let currentLetterIndex = 0; 
+        let mistakes = 0;
+        const maxMistakes = 6;
+        let audioCtx;
+
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            let dummySpeech = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(dummySpeech);
+            
+            loadWord();
+        }
+
+        function loadWord() {
+            currentWord = words[currentWordIndex].toUpperCase();
+            currentLetterIndex = 0;
+            mistakes = 0;
+            
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('message').innerText = "";
+            document.getElementById('keyboard').style.pointerEvents = "auto";
+            
+            updateLivesDisplay();
+            updateWordDisplay();
+            buildKeyboard();
+            
+            setTimeout(playAudio, 500);
+        }
+
+        function playAudio() {
+            window.speechSynthesis.cancel();
+            let utterance = new SpeechSynthesisUtterance(currentWord);
+            utterance.rate = 0.85; 
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function playFartSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            // A sawtooth wave gives that nice buzzy texture
+            osc.type = 'sawtooth';
+            
+            // Start at 100Hz and drop down to a flabby 30Hz over 2.5 seconds
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 2.5);
+            
+            gain.gain.setValueAtTime(1, audioCtx.currentTime);
+            
+            // Modulate the volume to make it "sputter"
+            for(let i = 0.1; i < 2.5; i += 0.1) {
+                gain.gain.setValueAtTime(Math.random() * 0.8 + 0.2, audioCtx.currentTime + i);
+            }
+            
+            // Fade out at the very end
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2.5);
+            
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 2.5);
+        }
+
+        function updateWordDisplay() {
+            let displayString = "";
+            for (let i = 0; i < currentWord.length; i++) {
+                if (i < currentLetterIndex) {
+                    displayString += currentWord[i] + " ";
+                } else {
+                    displayString += "_ ";
+                }
+            }
+            document.getElementById('wordDisplay').innerText = displayString.trim();
+
+            if (currentLetterIndex === currentWord.length) {
+                document.getElementById('message').innerText = "✅ Excellent!";
+                document.getElementById('message').style.color = "#4caf50";
+                document.getElementById('keyboard').style.pointerEvents = "none";
+                document.getElementById('nextBtn').style.display = 'block';
+                
+                let winAudio = new SpeechSynthesisUtterance("Good job! " + currentWord);
+                window.speechSynthesis.speak(winAudio);
+            }
+        }
+
+        function updateLivesDisplay() {
+            let livesLeft = maxMistakes - mistakes;
+            let heartString = "";
+            for(let i=0; i<livesLeft; i++) { heartString += "❤️"; }
+            for(let i=0; i<mistakes; i++) { heartString += "🖤"; }
+            document.getElementById('livesDisplay').innerText = heartString;
+
+            if (livesLeft === 0) {
+                document.getElementById('message').innerText = "❌ The word was: " + currentWord;
+                document.getElementById('message').style.color = "#f44336";
+                document.getElementById('keyboard').style.pointerEvents = "none";
+                document.getElementById('wordDisplay').innerText = currentWord.split('').join(' ');
+                document.getElementById('nextBtn').style.display = 'block';
+                
+                playFartSound();
+            }
+        }
+
+        function handleGuess(letter, btnElement) {
+            if (mistakes >= maxMistakes || currentLetterIndex >= currentWord.length) return;
+
+            let expectedLetter = currentWord[currentLetterIndex];
+
+            if (letter === expectedLetter) {
+                // Correct letter in the correct order!
+                btnElement.classList.add('flash-correct');
+                setTimeout(() => { btnElement.classList.remove('flash-correct'); }, 300);
+                
+                currentLetterIndex++;
+                updateWordDisplay();
+            } else {
+                // Wrong letter, or right letter in the wrong order
+                btnElement.classList.add('flash-wrong');
+                setTimeout(() => { btnElement.classList.remove('flash-wrong'); }, 300);
+                
+                mistakes++;
+                updateLivesDisplay();
+            }
+        }
+
+        function buildKeyboard() {
+            const keyboardDiv = document.getElementById('keyboard');
+            keyboardDiv.innerHTML = ''; 
+            
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let i = 0; i < alphabet.length; i++) {
+                let letter = alphabet[i];
+                let btn = document.createElement('button');
+                btn.className = 'key';
+                btn.innerText = letter;
+                btn.onclick = () => handleGuess(letter, btn);
+                keyboardDiv.appendChild(btn);
+            }
+        }
+
+        function nextWord() {
+            currentWordIndex++;
+            if (currentWordIndex >= words.length) {
+                document.getElementById('gameArea').style.display = 'none';
+                document.getElementById('endScreen').style.display = 'block';
+            } else {
+                loadWord();
+            }
+        }
+    </script>
+</body>
+</html>
