@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agent Abi: Radio Intercept</title>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; padding: 20px; background-color: #121212; color: #00ff00; text-align: center; margin: 0; touch-action: manipulation; }
+        h1 { color: #00ff00; font-size: 32px; margin-top: 10px; margin-bottom: 5px; text-shadow: 0 0 10px #00ff00; }
+        
+        .card { background-color: #1e1e1e; padding: 25px; border-radius: 15px; margin: 10px auto; max-width: 800px; box-shadow: 0 8px 16px rgba(0,255,0,0.2); border: 2px solid #00ff00; }
+        
+        .story-text { font-size: 20px; color: #b0bec5; margin-bottom: 20px; }
+        
+        button { padding: 15px 30px; font-size: 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; margin: 10px; transition: transform 0.1s; font-family: 'Courier New', Courier, monospace; }
+        button:active { transform: translateY(4px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .btn-start { background-color: #00ff00; color: #121212; box-shadow: 0 5px 0 #008800; width: 80%; max-width: 300px; display: block; margin: 15px auto; }
+        .btn-listen { background-color: #ff0000; color: white; box-shadow: 0 5px 0 #880000; font-size: 28px; width: 80%; max-width: 300px; animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+
+        /* Number Pad */
+        #numpad { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 30px; max-width: 300px; margin-left: auto; margin-right: auto; }
+        .num-btn { 
+            width: 80px; height: 80px; 
+            border-radius: 10px; 
+            font-size: 32px; 
+            background-color: #333;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+        }
+        
+        #displayScreen { 
+            background-color: #000; 
+            border: 2px solid #00ff00; 
+            height: 60px; 
+            margin: 20px auto; 
+            max-width: 300px; 
+            font-size: 40px; 
+            letter-spacing: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+
+        #feedback { font-size: 22px; font-weight: bold; margin-top: 15px; min-height: 40px; }
+        
+        .stats-area { display: flex; justify-content: space-around; background-color: #000; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px dashed #00ff00; }
+        .stat-box { font-size: 20px; font-weight: bold; }
+        
+        .badge { background-color: #ff0000; color: white; padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; display: inline-block; margin-bottom: 10px; border: 2px solid white; }
+    </style>
+</head>
+<body>
+
+    <div class="card" id="startScreen">
+        <div class="badge">🎧 HEADPHONES STRICTLY REQUIRED</div>
+        <h1>📡 Agent Abi: Radio Intercept</h1>
+        <p class="story-text">Enemy agents are trying to jam our signal! They are blasting static into your right ear. Focus all your attention on your LEFT ear to intercept the secret number code.</p>
+        <button class="btn-start" onclick="startGame()">Start Mission</button>
+    </div>
+
+    <div class="card" id="gameScreen" style="display: none;">
+        <div class="stats-area">
+            <div class="stat-box" id="levelDisplay">Level: 1</div>
+            <div class="stat-box" id="streakDisplay">Intel: 0</div>
+        </div>
+        
+        <button class="btn-listen" id="listenBtn" onclick="playCode()">🎙️ Intercept Code</button>
+        
+        <div id="displayScreen"></div>
+
+        <div id="numpad" style="pointer-events: none; opacity: 0.5;">
+            </div>
+
+        <div id="feedback"></div>
+        
+        <button class="btn-start" id="nextBtn" style="display: none;" onclick="generateCode()">Next Target ➡️</button>
+        <button class="btn-start" style="margin-top: 40px; background-color: #333; color: #00ff00; border: 1px solid #00ff00; box-shadow: none;" onclick="location.reload()">🏠 Abort Mission</button>
+    </div>
+
+    <script>
+        let audioCtx;
+        let jammerSource;
+        
+        let currentLevel = 1;
+        let streak = 0;
+        let secretCode = "";
+        let playerInput = "";
+        let isPlaying = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function startGame() {
+            initAudio();
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            buildNumpad();
+            generateCode();
+            
+            // Wake up speech engine
+            let dummy = new SpeechSynthesisUtterance("");
+            window.speechSynthesis.speak(dummy);
+        }
+
+        function buildNumpad() {
+            const pad = document.getElementById('numpad');
+            for(let i=1; i<=9; i++) {
+                pad.innerHTML += `<button class="num-btn" onclick="handleInput(${i})">${i}</button>`;
+            }
+            pad.innerHTML += `<button class="num-btn" style="visibility: hidden;"></button>`;
+            pad.innerHTML += `<button class="num-btn" onclick="handleInput(0)">0</button>`;
+            pad.innerHTML += `<button class="num-btn" onclick="clearInput()">C</button>`;
+        }
+
+        function getLevelSettings() {
+            // As level increases, code gets longer and right-ear jammer gets louder
+            let digits = 3;
+            if (currentLevel >= 3) digits = 4;
+            if (currentLevel >= 6) digits = 5;
+            
+            // Jammer volume caps at 0.8 so it doesn't hurt her ear
+            let jammerVol = Math.min(0.2 + (currentLevel * 0.1), 0.8);
+            
+            return { digits: digits, jammerVol: jammerVol };
+        }
+
+        function generateCode() {
+            let settings = getLevelSettings();
+            secretCode = "";
+            playerInput = "";
+            
+            for(let i=0; i<settings.digits; i++) {
+                secretCode += Math.floor(Math.random() * 10).toString();
+            }
+
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('displayScreen').innerText = "";
+            document.getElementById('feedback').innerText = "";
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('listenBtn').disabled = false;
+            document.getElementById('numpad').style.pointerEvents = "none";
+            document.getElementById('numpad').style.opacity = "0.5";
+        }
+
+        function startRightEarJammer(volume) {
+            // Generate raw radio static
+            const bufferSize = audioCtx.sampleRate * 2;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1; 
+            }
+            
+            jammerSource = audioCtx.createBufferSource();
+            jammerSource.buffer = noiseBuffer;
+            jammerSource.loop = true;
+
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = volume;
+
+            // Pan completely to the right ear (Value of 1)
+            let panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+            if (panner) {
+                panner.pan.value = 1;
+            } else {
+                panner = audioCtx.createPanner();
+                panner.panningModel = 'equalpower';
+                panner.setPosition(1, 0, 0);
+            }
+
+            jammerSource.connect(gainNode);
+            gainNode.connect(panner);
+            panner.connect(audioCtx.destination);
+            
+            jammerSource.start();
+        }
+
+        function stopJammer() {
+            if (jammerSource) {
+                jammerSource.stop();
+                jammerSource.disconnect();
+            }
+        }
+
+        function playCode() {
+            if (isPlaying) return;
+            isPlaying = true;
+            initAudio();
+            
+            document.getElementById('listenBtn').disabled = true;
+            playerInput = "";
+            document.getElementById('displayScreen').innerText = "";
+            document.getElementById('feedback').innerText = "Intercepting signal...";
+            document.getElementById('feedback').style.color = "#fff";
+            
+            let settings = getLevelSettings();
+            
+            // 1. Blast the right ear with the jammer
+            startRightEarJammer(settings.jammerVol);
+
+            // 2. Speak the code clearly (centered, so left ear hears it perfectly)
+            let spokenCode = secretCode.split('').join('... '); // Add pauses between numbers
+            let utterance = new SpeechSynthesisUtterance(spokenCode);
+            utterance.rate = 0.8;
+            
+            utterance.onend = function() {
+                stopJammer();
+                isPlaying = false;
+                document.getElementById('listenBtn').disabled = false;
+                document.getElementById('numpad').style.pointerEvents = "auto";
+                document.getElementById('numpad').style.opacity = "1";
+                document.getElementById('feedback').innerText = "Enter the code.";
+                document.getElementById('feedback').style.color = "#00ff00";
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function handleInput(num) {
+            if (playerInput.length < secretCode.length) {
+                playerInput += num.toString();
+                document.getElementById('displayScreen').innerText = playerInput;
+                
+                if (playerInput.length === secretCode.length) {
+                    checkAnswer();
+                }
+            }
+        }
+
+        function clearInput() {
+            playerInput = "";
+            document.getElementById('displayScreen').innerText = "";
+            document.getElementById('feedback').innerText = "Enter the code.";
+            document.getElementById('feedback').style.color = "#00ff00";
+        }
+
+        function checkAnswer() {
+            document.getElementById('numpad').style.pointerEvents = "none";
+            document.getElementById('numpad').style.opacity = "0.5";
+            let feedbackEl = document.getElementById('feedback');
+
+            if (playerInput === secretCode) {
+                feedbackEl.innerHTML = "SYSTEM HACKED! Code accepted.";
+                feedbackEl.style.color = "#00ff00";
+                streak++;
+                
+                if (streak % 3 === 0) {
+                    currentLevel++;
+                    feedbackEl.innerHTML += "<br>SECURITY INCREASED. Jammer is getting louder!";
+                }
+                
+                document.getElementById('streakDisplay').innerText = `Intel: ${streak}`;
+                document.getElementById('levelDisplay').innerText = `Level: ${currentLevel}`;
+                document.getElementById('nextBtn').style.display = 'block';
+                document.getElementById('listenBtn').disabled = true;
+            } else {
+                feedbackEl.innerHTML = "ACCESS DENIED! Signal was jammed.";
+                feedbackEl.style.color = "#ff0000";
+                
+                // Drop level slightly if she misses so it doesn't stay too loud/fast
+                if (currentLevel > 1) {
+                    currentLevel--;
+                    document.getElementById('levelDisplay').innerText = `Level: ${currentLevel}`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
