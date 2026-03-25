@@ -77,24 +77,16 @@
     <script>
         // 👇 EDIT YOUR WEEKLY WORDS RIGHT HERE 👇
         let initialWords = [
-            "gathered",
-            "grateful",
-            "garden",
-            "grass",
-            "again",
-            "gear",
-            "great",
             "guest",
-            "goalie",
-            "generous",
-            "engine",
-            "giraffe",
-            "giant"
+            "apple",
+            "banana",
+            "orange",
+            "grape"
         ];
         // 👆 --------------------------------- 👆
 
         let currentQueue = [];
-        let missedWordsQueue = []; // Stores objects: { word: "GUEST", errorIndex: 1 }
+        let missedWordsQueue = []; 
         
         let currentWordIndex = 0;
         let currentWord = "";
@@ -108,9 +100,7 @@
         let audioCtx;
 
         function startGame() {
-            // Load words into the active queue
             currentQueue = [...initialWords];
-            
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
             
@@ -119,8 +109,6 @@
             
             startSpellingPhase();
         }
-
-        // --- PHASE 1: AUDIO SPELLING ---
 
         function startSpellingPhase() {
             document.getElementById('startScreen').style.display = 'none';
@@ -155,20 +143,40 @@
         function playAudio() {
             window.speechSynthesis.cancel();
             
-            // 1. Add a period to force a hard consonant stop at the end of the word
+            // Add a period to force a hard consonant stop at the end
             let utterance = new SpeechSynthesisUtterance(currentWord + ".");
-            
-            // 2. Bump the speed up slightly so it doesn't slur
             utterance.rate = 0.9; 
             
-            // 3. Search the iPad for a better, crisper voice
             let voices = window.speechSynthesis.getVoices();
-            
-            // Look for an enhanced US voice, or a crisp British voice (great for consonant clarity)
             let premiumVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Enhanced'));
             let britishVoice = voices.find(v => v.lang === 'en-GB');
             
-            // Use the premium one if available, otherwise use British, otherwise default
+            if (premiumVoice) {
+                utterance.voice = premiumVoice;
+            } else if (britishVoice) {
+                utterance.voice = britishVoice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakPraise() {
+            let praises = [
+                "good job Abi", 
+                "nice", 
+                "you got this", 
+                "dang girlfriend", 
+                "you're killing it"
+            ];
+            let randomPraise = praises[Math.floor(Math.random() * praises.length)];
+            
+            let utterance = new SpeechSynthesisUtterance(randomPraise);
+            utterance.rate = 0.9;
+            
+            let voices = window.speechSynthesis.getVoices();
+            let premiumVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Enhanced'));
+            let britishVoice = voices.find(v => v.lang === 'en-GB');
+            
             if (premiumVoice) {
                 utterance.voice = premiumVoice;
             } else if (britishVoice) {
@@ -178,7 +186,6 @@
             window.speechSynthesis.speak(utterance);
         }
         
-        // Custom Sounds
         function playTone(type, freq, dur) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             let osc = audioCtx.createOscillator();
@@ -228,8 +235,10 @@
                 document.getElementById('keyboard').style.pointerEvents = "none";
                 document.getElementById('nextBtn').style.display = 'block';
                 
-                let winAudio = new SpeechSynthesisUtterance("Good job! " + currentWord);
-                window.speechSynthesis.speak(winAudio);
+                // Only speak authentic encouragement if she got it perfectly
+                if (!wordFailedThisRound) {
+                    speakPraise();
+                }
             }
         }
 
@@ -270,7 +279,6 @@
                 btnElement.classList.add('flash-wrong');
                 setTimeout(() => { btnElement.classList.remove('flash-wrong'); }, 300);
                 
-                // Track the very first mistake made on this word to generate the visual distractors later
                 if (!wordFailedThisRound) {
                     firstMistakeIndex = currentLetterIndex;
                     wordFailedThisRound = true;
@@ -303,7 +311,6 @@
         }
 
         function processNext() {
-            // If she made a mistake, save it to the missed queue for the review phase
             if (wordFailedThisRound) {
                 missedWordsQueue.push({
                     word: currentWord,
@@ -313,11 +320,9 @@
 
             currentWordIndex++;
             if (currentWordIndex >= currentQueue.length) {
-                // Round over. Check if she missed any.
                 if (missedWordsQueue.length > 0) {
                     startReviewPhase();
                 } else {
-                    // 100% Perfect Run!
                     document.getElementById('gameArea').style.display = 'none';
                     document.getElementById('endScreen').style.display = 'block';
                 }
@@ -325,9 +330,6 @@
                 loadWord();
             }
         }
-
-
-        // --- PHASE 2: VISUAL REVIEW ---
 
         let reviewIndex = 0;
 
@@ -340,27 +342,23 @@
 
         function generateDistractors(wordObj) {
             let options = new Set();
-            options.add(wordObj.word); // The correct answer
+            options.add(wordObj.word); 
             
             let expectedLetter = wordObj.word[wordObj.errorIndex];
             let vowels = "AEIOU".split("");
             let consonants = "BCDFGHJKLMNPQRSTVWXYZ".split("");
             
-            // If the letter she missed was a vowel, generate vowel distractors. Otherwise, consonants.
             let pool = vowels.includes(expectedLetter) ? vowels : consonants;
-            
-            // Shuffle the pool
             pool = pool.sort(() => 0.5 - Math.random());
 
             for (let char of pool) {
-                if (options.size >= 5) break; // We want exactly 5 options
+                if (options.size >= 5) break; 
                 if (char !== expectedLetter) {
                     let badWord = wordObj.word.substring(0, wordObj.errorIndex) + char + wordObj.word.substring(wordObj.errorIndex + 1);
                     options.add(badWord);
                 }
             }
             
-            // Return array of exactly 5 options, shuffled
             return Array.from(options).sort(() => 0.5 - Math.random());
         }
 
@@ -368,7 +366,7 @@
             document.getElementById('nextReviewBtn').style.display = 'none';
             
             let currentReview = missedWordsQueue[reviewIndex];
-            currentWord = currentReview.word; // Set this so the audio button works
+            currentWord = currentReview.word; 
             
             let options = generateDistractors(currentReview);
             
@@ -388,7 +386,7 @@
 
         function checkReviewAnswer(selected, correct, btnElement) {
             let allBtns = document.querySelectorAll('.review-btn');
-            allBtns.forEach(b => b.style.pointerEvents = 'none'); // Disable clicking
+            allBtns.forEach(b => b.style.pointerEvents = 'none'); 
             
             if (selected === correct) {
                 playDing();
@@ -398,7 +396,6 @@
                 playWrongBuzz();
                 btnElement.classList.add('wrong-choice');
                 
-                // Highlight the actual correct one so she sees it
                 allBtns.forEach(b => {
                     if (b.innerText === correct) b.classList.add('correct-choice');
                 });
@@ -410,7 +407,6 @@
         function nextReview() {
             reviewIndex++;
             if (reviewIndex >= missedWordsQueue.length) {
-                // Done reviewing! Now put only the missed words back into the typing queue
                 currentQueue = missedWordsQueue.map(item => item.word);
                 startSpellingPhase();
             } else {
