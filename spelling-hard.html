@@ -77,19 +77,11 @@
     <script>
         // 👇 EDIT YOUR WEEKLY WORDS RIGHT HERE 👇
         let initialWords = [
-            "gathered",
-            "grateful",
-            "garden",
-            "grass",
-            "again",
-            "gear",
-            "great",
             "guest",
-            "goalie",
-            "generous",
-            "engine",
-            "giraffe",
-            "giant"
+            "apple",
+            "banana",
+            "orange",
+            "grape"
         ];
         // 👆 --------------------------------- 👆
 
@@ -151,20 +143,10 @@
         function playAudio() {
             window.speechSynthesis.cancel();
             
-            // Add a period to force a hard consonant stop at the end
+            // Add a period to force a hard consonant stop at the end, keep rate at 0.9 for clarity
             let utterance = new SpeechSynthesisUtterance(currentWord + ".");
             utterance.rate = 0.9; 
             
-            let voices = window.speechSynthesis.getVoices();
-            let premiumVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Enhanced'));
-            let britishVoice = voices.find(v => v.lang === 'en-GB');
-            
-            if (premiumVoice) {
-                utterance.voice = premiumVoice;
-            } else if (britishVoice) {
-                utterance.voice = britishVoice;
-            }
-
             window.speechSynthesis.speak(utterance);
         }
 
@@ -180,16 +162,6 @@
             
             let utterance = new SpeechSynthesisUtterance(randomPraise);
             utterance.rate = 0.9;
-            
-            let voices = window.speechSynthesis.getVoices();
-            let premiumVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Enhanced'));
-            let britishVoice = voices.find(v => v.lang === 'en-GB');
-            
-            if (premiumVoice) {
-                utterance.voice = premiumVoice;
-            } else if (britishVoice) {
-                utterance.voice = britishVoice;
-            }
 
             window.speechSynthesis.speak(utterance);
         }
