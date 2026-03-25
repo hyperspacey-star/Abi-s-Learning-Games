@@ -154,8 +154,27 @@
 
         function playAudio() {
             window.speechSynthesis.cancel();
-            let utterance = new SpeechSynthesisUtterance(currentWord);
-            utterance.rate = 0.85; 
+            
+            // 1. Add a period to force a hard consonant stop at the end of the word
+            let utterance = new SpeechSynthesisUtterance(currentWord + ".");
+            
+            // 2. Bump the speed up slightly so it doesn't slur
+            utterance.rate = 0.9; 
+            
+            // 3. Search the iPad for a better, crisper voice
+            let voices = window.speechSynthesis.getVoices();
+            
+            // Look for an enhanced US voice, or a crisp British voice (great for consonant clarity)
+            let premiumVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Enhanced'));
+            let britishVoice = voices.find(v => v.lang === 'en-GB');
+            
+            // Use the premium one if available, otherwise use British, otherwise default
+            if (premiumVoice) {
+                utterance.voice = premiumVoice;
+            } else if (britishVoice) {
+                utterance.voice = britishVoice;
+            }
+
             window.speechSynthesis.speak(utterance);
         }
         
