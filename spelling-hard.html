@@ -11,26 +11,26 @@
         
         #livesDisplay { font-size: 40px; margin: 10px 0; min-height: 50px; }
         
-        #wordDisplay { 
-            font-size: 48px; font-weight: bold; color: #333; letter-spacing: 10px; margin: 20px 0; min-height: 70px; font-family: monospace;
-        }
+        #wordDisplay { font-size: 48px; font-weight: bold; color: #333; letter-spacing: 10px; margin: 20px 0; min-height: 70px; font-family: monospace; }
         
-        .btn-audio { 
-            background-color: #ff5722; color: white; padding: 15px 30px; font-size: 24px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; margin-left: auto; margin-right: auto; gap: 10px;
-        }
+        .btn-audio { background-color: #ff5722; color: white; padding: 15px 30px; font-size: 24px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; margin-left: auto; margin-right: auto; gap: 10px; }
         .btn-audio:active { transform: translateY(3px); box-shadow: none; }
         
         #keyboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; }
-        .key { 
-            background-color: #fff; border: 3px solid #ffccbc; color: #d84315; font-size: 28px; font-weight: bold; width: 55px; height: 65px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #ffccbc; font-family: 'Comic Sans MS', Arial; transition: background-color 0.2s;
-        }
+        .key { background-color: #fff; border: 3px solid #ffccbc; color: #d84315; font-size: 28px; font-weight: bold; width: 55px; height: 65px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #ffccbc; font-family: 'Comic Sans MS', Arial; transition: background-color 0.2s; }
         .key:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
         .key:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
         
         .key.flash-correct { background-color: #c8e6c9 !important; border-color: #4caf50 !important; color: #2e7d32 !important; }
         .key.flash-wrong { background-color: #ffcdd2 !important; border-color: #f44336 !important; color: #c62828 !important; }
 
-        #gameArea, #endScreen { display: none; }
+        /* Review Phase Styles */
+        .review-btn { display: block; width: 80%; max-width: 400px; margin: 15px auto; padding: 20px; font-size: 32px; background-color: #e3f2fd; border: 3px solid #2196f3; color: #0d47a1; border-radius: 15px; cursor: pointer; font-family: monospace; font-weight: bold; box-shadow: 0 5px 0 #1976d2; transition: transform 0.1s; text-transform: uppercase; letter-spacing: 5px; }
+        .review-btn:active { transform: translateY(5px); box-shadow: none; }
+        .review-btn.wrong-choice { background-color: #ffcdd2; border-color: #f44336; color: #b71c1c; box-shadow: 0 5px 0 #d32f2f; }
+        .review-btn.correct-choice { background-color: #c8e6c9; border-color: #4caf50; color: #1b5e20; box-shadow: 0 5px 0 #388e3c; }
+
+        #gameArea, #reviewArea, #endScreen { display: none; }
         
         .btn-start { background-color: #d84315; color: white; padding: 20px 40px; font-size: 28px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; margin-top: 30px; box-shadow: 0 5px 0 #bf360c; }
         .btn-start:active { transform: translateY(5px); box-shadow: none; }
@@ -46,7 +46,7 @@
     <div class="card" id="startScreen">
         <div class="mode-badge">🔥 HARD MODE 🔥</div>
         <h1>🎧 Listen & Spell!</h1>
-        <p style="font-size: 20px; color: #555;">Warning: You must type the letters in the <strong>exact right order</strong>. Miss too many, and things might get... smelly.</p>
+        <p style="font-size: 20px; color: #555;">Warning: You must type the letters in the <strong>exact right order</strong>. The game will not end until you spell every word perfectly!</p>
         <button class="btn-start" onclick="startGame()">Start Game! ▶️</button>
     </div>
 
@@ -54,50 +54,54 @@
         <div id="livesDisplay">❤️❤️❤️❤️❤️❤️</div>
         <button class="btn-audio" onclick="playAudio()">🔊 Hear Word Again</button>
         <div id="wordDisplay">_ _ _ _ _</div>
-        
         <div id="clueDisplay"></div>
         <div id="message"></div>
-        
         <div id="keyboard"></div>
-        <button id="nextBtn" class="btn-start" style="display: none; margin-left: auto; margin-right: auto; margin-top: 20px; background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32;" onclick="nextWord()">Next Word ➡️</button>
+        <button id="nextBtn" class="btn-start" style="display: none; margin: auto; margin-top: 20px; background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32;" onclick="processNext()">Next Word ➡️</button>
+    </div>
+
+    <div class="card" id="reviewArea">
+        <h1>🔍 Visual Review</h1>
+        <p style="font-size: 24px; color: #555;">You missed a few! Which one is spelled correctly?</p>
+        <button class="btn-audio" onclick="playAudio()" style="background-color: #2196f3; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔊 Hear Word</button>
+        <div id="reviewOptions"></div>
+        <button id="nextReviewBtn" class="btn-start" style="display: none; margin: auto; margin-top: 20px; background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32;" onclick="nextReview()">Continue ➡️</button>
     </div>
 
     <div class="card" id="endScreen">
-        <h1>🎉 YOU SURVIVED! 🎉</h1>
-        <p style="font-size: 24px;">You spelled all the words in Hard Mode!</p>
+        <h1>🎉 PERFECT MASTERY! 🎉</h1>
+        <p style="font-size: 24px;">You spelled every single word perfectly without making a mistake!</p>
         <button class="btn-start" onclick="location.reload()">Play Again 🔄</button>
     </div>
 
     <script>
         // 👇 EDIT YOUR WEEKLY WORDS RIGHT HERE 👇
-        let words = [
-            "gathered",
-            "grateful",
-            "garden",
-            "grass",
-            "again",
-            "gear",
-            "great",
+        let initialWords = [
             "guest",
-            "goalie",
-            "generous",
-            "engine",
-            "giraffe",
-            "giant"
+            "apple",
+            "banana",
+            "orange",
+            "grape"
         ];
         // 👆 --------------------------------- 👆
 
+        let currentQueue = [];
+        let missedWordsQueue = []; // Stores objects: { word: "GUEST", errorIndex: 1 }
+        
         let currentWordIndex = 0;
         let currentWord = "";
         let currentLetterIndex = 0; 
+        
         let mistakes = 0;
-        let mistakesOnCurrentLetter = 0; // Tracks consecutive mistakes for the clue
+        let mistakesOnCurrentLetter = 0;
+        let wordFailedThisRound = false;
+        let firstMistakeIndex = -1;
         const maxMistakes = 6;
         let audioCtx;
 
         function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
+            // Load words into the active queue
+            currentQueue = [...initialWords];
             
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
@@ -105,14 +109,28 @@
             let dummySpeech = new SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(dummySpeech);
             
+            startSpellingPhase();
+        }
+
+        // --- PHASE 1: AUDIO SPELLING ---
+
+        function startSpellingPhase() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('reviewArea').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            
+            currentWordIndex = 0;
+            missedWordsQueue = [];
             loadWord();
         }
 
         function loadWord() {
-            currentWord = words[currentWordIndex].toUpperCase();
+            currentWord = currentQueue[currentWordIndex].toUpperCase();
             currentLetterIndex = 0;
             mistakes = 0;
             mistakesOnCurrentLetter = 0;
+            wordFailedThisRound = false;
+            firstMistakeIndex = -1;
             
             document.getElementById('nextBtn').style.display = 'none';
             document.getElementById('message').innerText = "";
@@ -133,40 +151,23 @@
             window.speechSynthesis.speak(utterance);
         }
         
-        // --- Custom Synthesizer Sounds ---
-        function playDing() {
+        // Custom Sounds
+        function playTone(type, freq, dur) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             let osc = audioCtx.createOscillator();
             let gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
-            osc.type = 'sine'; // Smooth, pure tone
-            osc.frequency.setValueAtTime(1000, audioCtx.currentTime); // High pitch
-            
+            osc.type = type; 
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime); 
             gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
+            osc.stop(audioCtx.currentTime + dur);
         }
 
-        function playWrongBuzz() {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            let osc = audioCtx.createOscillator();
-            let gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.type = 'sawtooth'; // Buzzy, harsh tone
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime); // Low pitch
-            
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-            
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.2);
-        }
+        function playDing() { playTone('sine', 1000, 0.3); }
+        function playWrongBuzz() { playTone('sawtooth', 150, 0.2); }
 
         function playFartSound() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -175,17 +176,13 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.type = 'sawtooth';
-            
             osc.frequency.setValueAtTime(100, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 2.5);
-            
             gain.gain.setValueAtTime(1, audioCtx.currentTime);
-            
             for(let i = 0.1; i < 2.5; i += 0.1) {
                 gain.gain.setValueAtTime(Math.random() * 0.8 + 0.2, audioCtx.currentTime + i);
             }
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 2.5);
-            
             osc.start(audioCtx.currentTime);
             osc.stop(audioCtx.currentTime + 2.5);
         }
@@ -193,17 +190,14 @@
         function updateWordDisplay() {
             let displayString = "";
             for (let i = 0; i < currentWord.length; i++) {
-                if (i < currentLetterIndex) {
-                    displayString += currentWord[i] + " ";
-                } else {
-                    displayString += "_ ";
-                }
+                if (i < currentLetterIndex) { displayString += currentWord[i] + " "; } 
+                else { displayString += "_ "; }
             }
             document.getElementById('wordDisplay').innerText = displayString.trim();
 
             if (currentLetterIndex === currentWord.length) {
-                document.getElementById('message').innerText = "✅ Excellent!";
-                document.getElementById('message').style.color = "#4caf50";
+                document.getElementById('message').innerText = wordFailedThisRound ? "We'll practice this one again later!" : "✅ Perfect!";
+                document.getElementById('message').style.color = wordFailedThisRound ? "#f57f17" : "#4caf50";
                 document.getElementById('keyboard').style.pointerEvents = "none";
                 document.getElementById('nextBtn').style.display = 'block';
                 
@@ -220,13 +214,12 @@
             document.getElementById('livesDisplay').innerText = heartString;
 
             if (livesLeft <= 0) {
-                document.getElementById('message').innerText = "❌ The word was: " + currentWord;
+                document.getElementById('message').innerText = "❌ We will definitely practice this one again!";
                 document.getElementById('message').style.color = "#f44336";
-                document.getElementById('clueDisplay').innerText = ""; // Clear clue on game over
+                document.getElementById('clueDisplay').innerText = ""; 
                 document.getElementById('keyboard').style.pointerEvents = "none";
                 document.getElementById('wordDisplay').innerText = currentWord.split('').join(' ');
                 document.getElementById('nextBtn').style.display = 'block';
-                
                 playFartSound();
             }
         }
@@ -242,25 +235,28 @@
                 setTimeout(() => { btnElement.classList.remove('flash-correct'); }, 300);
                 
                 currentLetterIndex++;
-                mistakesOnCurrentLetter = 0; // Reset consecutive mistakes
-                document.getElementById('clueDisplay').innerText = ""; // Hide clue
-                
+                mistakesOnCurrentLetter = 0; 
+                document.getElementById('clueDisplay').innerText = ""; 
                 updateWordDisplay();
             } else {
                 playWrongBuzz();
                 btnElement.classList.add('flash-wrong');
                 setTimeout(() => { btnElement.classList.remove('flash-wrong'); }, 300);
                 
+                // Track the very first mistake made on this word to generate the visual distractors later
+                if (!wordFailedThisRound) {
+                    firstMistakeIndex = currentLetterIndex;
+                    wordFailedThisRound = true;
+                }
+                
                 mistakes++;
                 mistakesOnCurrentLetter++;
                 
-                // Show clue if they miss twice on the exact same letter
                 if (mistakesOnCurrentLetter >= 2 && mistakes < maxMistakes) {
                     const vowels = ['A', 'E', 'I', 'O', 'U'];
                     const isVowel = vowels.includes(expectedLetter);
                     document.getElementById('clueDisplay').innerText = isVowel ? "💡 Hint: The next letter is a VOWEL!" : "💡 Hint: The next letter is a CONSONANT!";
                 }
-
                 updateLivesDisplay();
             }
         }
@@ -268,7 +264,6 @@
         function buildKeyboard() {
             const keyboardDiv = document.getElementById('keyboard');
             keyboardDiv.innerHTML = ''; 
-            
             const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             for (let i = 0; i < alphabet.length; i++) {
                 let letter = alphabet[i];
@@ -280,13 +275,119 @@
             }
         }
 
-        function nextWord() {
+        function processNext() {
+            // If she made a mistake, save it to the missed queue for the review phase
+            if (wordFailedThisRound) {
+                missedWordsQueue.push({
+                    word: currentWord,
+                    errorIndex: firstMistakeIndex > -1 ? firstMistakeIndex : 0
+                });
+            }
+
             currentWordIndex++;
-            if (currentWordIndex >= words.length) {
-                document.getElementById('gameArea').style.display = 'none';
-                document.getElementById('endScreen').style.display = 'block';
+            if (currentWordIndex >= currentQueue.length) {
+                // Round over. Check if she missed any.
+                if (missedWordsQueue.length > 0) {
+                    startReviewPhase();
+                } else {
+                    // 100% Perfect Run!
+                    document.getElementById('gameArea').style.display = 'none';
+                    document.getElementById('endScreen').style.display = 'block';
+                }
             } else {
                 loadWord();
+            }
+        }
+
+
+        // --- PHASE 2: VISUAL REVIEW ---
+
+        let reviewIndex = 0;
+
+        function startReviewPhase() {
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('reviewArea').style.display = 'block';
+            reviewIndex = 0;
+            loadReviewWord();
+        }
+
+        function generateDistractors(wordObj) {
+            let options = new Set();
+            options.add(wordObj.word); // The correct answer
+            
+            let expectedLetter = wordObj.word[wordObj.errorIndex];
+            let vowels = "AEIOU".split("");
+            let consonants = "BCDFGHJKLMNPQRSTVWXYZ".split("");
+            
+            // If the letter she missed was a vowel, generate vowel distractors. Otherwise, consonants.
+            let pool = vowels.includes(expectedLetter) ? vowels : consonants;
+            
+            // Shuffle the pool
+            pool = pool.sort(() => 0.5 - Math.random());
+
+            for (let char of pool) {
+                if (options.size >= 5) break; // We want exactly 5 options
+                if (char !== expectedLetter) {
+                    let badWord = wordObj.word.substring(0, wordObj.errorIndex) + char + wordObj.word.substring(wordObj.errorIndex + 1);
+                    options.add(badWord);
+                }
+            }
+            
+            // Return array of exactly 5 options, shuffled
+            return Array.from(options).sort(() => 0.5 - Math.random());
+        }
+
+        function loadReviewWord() {
+            document.getElementById('nextReviewBtn').style.display = 'none';
+            
+            let currentReview = missedWordsQueue[reviewIndex];
+            currentWord = currentReview.word; // Set this so the audio button works
+            
+            let options = generateDistractors(currentReview);
+            
+            const optionsDiv = document.getElementById('reviewOptions');
+            optionsDiv.innerHTML = '';
+            
+            options.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.className = 'review-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkReviewAnswer(opt, currentReview.word, btn);
+                optionsDiv.appendChild(btn);
+            });
+            
+            playAudio();
+        }
+
+        function checkReviewAnswer(selected, correct, btnElement) {
+            let allBtns = document.querySelectorAll('.review-btn');
+            allBtns.forEach(b => b.style.pointerEvents = 'none'); // Disable clicking
+            
+            if (selected === correct) {
+                playDing();
+                btnElement.classList.add('correct-choice');
+                document.getElementById('nextReviewBtn').style.display = 'block';
+            } else {
+                playWrongBuzz();
+                btnElement.classList.add('wrong-choice');
+                
+                // Highlight the actual correct one so she sees it
+                allBtns.forEach(b => {
+                    if (b.innerText === correct) b.classList.add('correct-choice');
+                });
+                
+                document.getElementById('nextReviewBtn').style.display = 'block';
+            }
+        }
+
+        function nextReview() {
+            reviewIndex++;
+            if (reviewIndex >= missedWordsQueue.length) {
+                // Done reviewing! Now put only the missed words back into the typing queue
+                currentQueue = missedWordsQueue.map(item => item.word);
+                startSpellingPhase();
+            } else {
+                loadReviewWord();
             }
         }
     </script>
