@@ -278,7 +278,7 @@
             let unshadedParts = totalParts - 1;
             let isTrick = Math.random() > 0.5;
             let claimed = isTrick ? `1/${unshadedParts}` : `1/${totalParts}`;
-            questionText.innerHTML = `Trang has a circle. 1 part is shaded, and ${unshadedParts} parts are not.<br>Trang says her fraction is <b>${claimed}</b>. Is she correct?`;
+            questionText.innerHTML = `Abi has a circle. 1 part is shaded, and ${unshadedParts} parts are not.<br>Abi says her fraction is <b>${claimed}</b>. Is she correct?`;
             correctAnswer = isTrick ? "False" : "True";
             createButtons(["True", "False"]);
 
