@@ -29,199 +29,176 @@
             color: #4ecdc4;
             margin-bottom: 20px;
         }
-        #sentence-display {
-            font-size: 1.8em;
-            background-color: #ffe66d;
-            padding: 20px;
+        .option-btn {
+            display: block;
+            width: 100%;
+            font-size: 1.3em;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f7f1e3;
+            color: #333;
+            border: 3px solid #d1ccc0;
             border-radius: 10px;
-            margin-bottom: 20px;
-            letter-spacing: 1px;
-        }
-        input[type="text"] {
-            width: 90%;
-            font-size: 1.5em;
-            padding: 10px;
-            border: 3px solid #4ecdc4;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            cursor: pointer;
             font-family: inherit;
+            transition: all 0.2s;
+            text-align: left;
         }
-        button {
+        .option-btn:hover {
+            background-color: #ffeaa7;
+            border-color: #fdcb6e;
+        }
+        .option-btn:active { transform: translateY(2px); }
+        .correct-btn {
+            background-color: #55efc4 !important;
+            border-color: #00b894 !important;
+        }
+        .incorrect-btn {
+            background-color: #fab1a0 !important;
+            border-color: #e17055 !important;
+        }
+        #next-btn {
             font-size: 1.3em;
             padding: 10px 30px;
-            background-color: #ff6b6b;
+            background-color: #4ecdc4;
             color: white;
             border: none;
             border-radius: 10px;
             cursor: pointer;
             font-family: inherit;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
+            margin-top: 15px;
         }
-        button:active { transform: translateY(2px); }
         #feedback {
             font-size: 1.5em;
             font-weight: bold;
             margin-top: 20px;
             min-height: 30px;
         }
-        .correct { color: #2ecc71; }
-        .incorrect { color: #e74c3c; }
-        .hint { font-size: 0.9em; color: #7f8c8d; margin-top: 10px; }
+        .correct { color: #00b894; }
+        .incorrect { color: #d63031; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <h1>🔍 Grammar Detective</h1>
+    <h1>🔍 Detective Abi's Grammar Cases</h1>
     
     <div class="stats">
         <div id="level-display">Level: 1 (Easy)</div>
         <div id="score-display">Score: 0</div>
     </div>
 
-    <p>Fix the sentence below! Add capital letters and punctuation.</p>
+    <p>Which sentence is written perfectly?</p>
     
-    <div id="sentence-display">loading...</div>
+    <div id="options-container">
+        </div>
     
-    <input type="text" id="user-input" placeholder="Type the correct sentence here..." autocomplete="off" spellcheck="false">
-    <br>
-    <button onclick="checkAnswer()">Check Answer</button>
-    <button onclick="nextSentence()" id="next-btn" style="display:none; background-color: #4ecdc4;">Next Sentence ➡️</button>
+    <button onclick="nextSentence()" id="next-btn" style="display:none;">Next Case ➡️</button>
 
     <div id="feedback"></div>
-    <div id="hint" class="hint"></div>
 </div>
 
 <script>
     // Sentence Database: Easy at first, getting harder!
-    const sentenceBank = [
+    const quizBank = [
         // Level 1: Basic Capitalization and Periods
-        { level: 1, broken: "the cat is sleeping", fixed: "The cat is sleeping." },
-        { level: 1, broken: "i like to eat apples", fixed: "I like to eat apples." },
-        { level: 1, broken: "my dog is very fast", fixed: "My dog is very fast." },
-        { level: 1, broken: "we went to the park", fixed: "We went to the park." },
-        { level: 1, broken: "she has a red balloon", fixed: "She has a red balloon." },
-        { level: 1, broken: "the sun is shining today", fixed: "The sun is shining today." },
-        { level: 1, broken: "he plays with his toys", fixed: "He plays with his toys." },
-        { level: 1, broken: "i see a big blue bird", fixed: "I see a big blue bird." },
-        { level: 1, broken: "the frog jumps high", fixed: "The frog jumps high." },
-        { level: 1, broken: "my mom makes good cookies", fixed: "My mom makes good cookies." },
-
+        { level: 1, options: ["The cat is sleeping.", "the cat is sleeping.", "The cat is sleeping"], correctIndex: 0 },
+        { level: 1, options: ["i like apples.", "I like apples", "I like apples."], correctIndex: 2 },
+        { level: 1, options: ["My dog is fast.", "my dog is fast.", "My dog is fast"], correctIndex: 0 },
+        { level: 1, options: ["We went to the park", "we went to the park.", "We went to the park."], correctIndex: 2 },
+        
         // Level 2: Questions and Exclamations
-        { level: 2, broken: "where is my left shoe", fixed: "Where is my left shoe?" },
-        { level: 2, broken: "watch out for that car", fixed: "Watch out for that car!" },
-        { level: 2, broken: "can you help me read this", fixed: "Can you help me read this?" },
-        { level: 2, broken: "happy birthday to you", fixed: "Happy birthday to you!" },
-        { level: 2, broken: "what is your favorite color", fixed: "What is your favorite color?" },
-        { level: 2, broken: "i won the game", fixed: "I won the game!" },
-        { level: 2, broken: "how old are you", fixed: "How old are you?" },
-        { level: 2, broken: "that is so awesome", fixed: "That is so awesome!" },
-        { level: 2, broken: "are we there yet", fixed: "Are we there yet?" },
-        { level: 2, broken: "look at that huge dinosaur", fixed: "Look at that huge dinosaur!" },
+        { level: 2, options: ["Where is my shoe?", "where is my shoe?", "Where is my shoe."], correctIndex: 0 },
+        { level: 2, options: ["Watch out for that car!", "Watch out for that car.", "watch out for that car!"], correctIndex: 0 },
+        { level: 2, options: ["can you help me read this?", "Can you help me read this.", "Can you help me read this?"], correctIndex: 2 },
+        { level: 2, options: ["I won the game!", "i won the game!", "I won the game."], correctIndex: 0 },
 
-        // Level 3: Names and Days of the Week (Mid-sentence capitals)
-        { level: 3, broken: "sarah and i play on monday", fixed: "Sarah and I play on Monday." },
-        { level: 3, broken: "is mr smith your teacher", fixed: "Is Mr. Smith your teacher?" },
-        { level: 3, broken: "we go to florida in july", fixed: "We go to Florida in July." },
-        { level: 3, broken: "did tom see the movie", fixed: "Did Tom see the movie?" },
-        { level: 3, broken: "my friend emily is nice", fixed: "My friend Emily is nice." },
-        { level: 3, broken: "i love fridays at school", fixed: "I love Fridays at school!" },
-        { level: 3, broken: "can max come over to play", fixed: "Can Max come over to play?" },
-        { level: 3, broken: "santa comes in december", fixed: "Santa comes in December." },
-        { level: 3, broken: "dr jones is very smart", fixed: "Dr. Jones is very smart." },
-        { level: 3, broken: "i think halloween is fun", fixed: "I think Halloween is fun!" },
+        // Level 3: Names and Days of the Week
+        { level: 3, options: ["sarah and I play on monday.", "Sarah and I play on Monday.", "Sarah and i play on Monday."], correctIndex: 1 },
+        { level: 3, options: ["We go to Florida in July.", "we go to florida in july.", "We go to Florida in july."], correctIndex: 0 },
+        { level: 3, options: ["Did Tom see the movie?", "Did tom see the movie?", "did Tom see the movie?"], correctIndex: 0 },
+        { level: 3, options: ["I love Fridays at school!", "I love fridays at school!", "i love Fridays at school!"], correctIndex: 0 },
 
-        // Level 4: Lists (Commas)
-        { level: 4, broken: "i need eggs milk and bread", fixed: "I need eggs, milk, and bread." },
-        { level: 4, broken: "we saw lions tigers and bears", fixed: "We saw lions, tigers, and bears." },
-        { level: 4, broken: "she likes pink purple and blue", fixed: "She likes pink, purple, and blue." },
-        { level: 4, broken: "pack your shirt pants and socks", fixed: "Pack your shirt, pants, and socks." },
-        { level: 4, broken: "do you want apples grapes or plums", fixed: "Do you want apples, grapes, or plums?" },
-        { level: 4, broken: "i can run jump and skip", fixed: "I can run, jump, and skip." },
-        { level: 4, broken: "my pets are a dog a cat and a fish", fixed: "My pets are a dog, a cat, and a fish." },
-        { level: 4, broken: "he draws squares circles and stars", fixed: "He draws squares, circles, and stars." },
-        { level: 4, broken: "spring summer fall and winter", fixed: "Spring, summer, fall, and winter." },
-        { level: 4, broken: "i brought a pencil paper and an eraser", fixed: "I brought a pencil, paper, and an eraser." }
+        // Level 4: Commas in a list
+        { level: 4, options: ["I need eggs milk and bread.", "I need eggs, milk, and bread.", "i need eggs, milk, and bread."], correctIndex: 1 },
+        { level: 4, options: ["We saw lions, tigers, and bears.", "We saw lions tigers, and bears.", "We saw lions tigers and bears."], correctIndex: 0 },
+        { level: 4, options: ["She likes pink, purple and blue", "she likes pink, purple, and blue.", "She likes pink, purple, and blue."], correctIndex: 2 },
+        { level: 4, options: ["I can run, jump, and skip.", "I can run jump and skip.", "i can run, jump, and skip."], correctIndex: 0 }
     ];
 
     let currentLevel = 1;
     let score = 0;
-    let currentSentence = {};
+    let currentQuiz = {};
+    let answered = false;
 
     function getLevelName(lvl) {
-        if (lvl === 1) return "1 (Easy: Capitals & Periods)";
-        if (lvl === 2) return "2 (Medium: ? and !)";
-        if (lvl === 3) return "3 (Hard: Names & Days)";
-        if (lvl === 4) return "4 (Expert: Commas)";
+        if (lvl === 1) return "1 (Capitals & Periods)";
+        if (lvl === 2) return "2 (Questions & Exclamations)";
+        if (lvl === 3) return "3 (Names & Days)";
+        if (lvl === 4) return "4 (Expert Commas)";
         return "Max";
     }
 
     function loadSentence() {
+        answered = false;
         // Filter sentences by current level
-        const availableSentences = sentenceBank.filter(s => s.level === currentLevel);
+        const availableQuizzes = quizBank.filter(q => q.level === currentLevel);
         
-        // Pick a random sentence from the available ones
-        const randomIndex = Math.floor(Math.random() * availableSentences.length);
-        currentSentence = availableSentences[randomIndex];
+        // Pick a random quiz
+        const randomIndex = Math.floor(Math.random() * availableQuizzes.length);
+        currentQuiz = availableQuizzes[randomIndex];
 
-        // Update UI
-        document.getElementById('sentence-display').innerText = currentSentence.broken;
-        document.getElementById('user-input').value = '';
+        // Clear previous UI
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
         document.getElementById('feedback').innerText = '';
-        document.getElementById('hint').innerText = '';
         document.getElementById('next-btn').style.display = 'none';
-        
-        // Set focus back to input box
-        document.getElementById('user-input').focus();
+
+        // Create buttons
+        currentQuiz.options.forEach((optionText, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = optionText;
+            btn.onclick = () => checkAnswer(index, btn);
+            container.appendChild(btn);
+        });
     }
 
-    function checkAnswer() {
-        const userInput = document.getElementById('user-input').value.trim();
-        const feedbackEl = document.getElementById('feedback');
-        const hintEl = document.getElementById('hint');
+    function checkAnswer(selectedIndex, clickedBtn) {
+        if (answered) return; // Prevent clicking multiple times
+        answered = true;
 
-        if (userInput === currentSentence.fixed) {
-            feedbackEl.innerText = "⭐ Fantastic! You got it right! ⭐";
+        const feedbackEl = document.getElementById('feedback');
+        const allButtons = document.querySelectorAll('.option-btn');
+
+        if (selectedIndex === currentQuiz.correctIndex) {
+            clickedBtn.classList.add('correct-btn');
+            feedbackEl.innerText = "⭐ Spot on, Detective! ⭐";
             feedbackEl.className = "correct";
-            hintEl.innerText = "";
             score += 10;
             
-            // Check for level up! (Every 50 points = next level)
-            if (score >= currentLevel * 50 && currentLevel < 4) {
+            // Check for level up! (40 points = next level for this demo)
+            if (score >= currentLevel * 40 && currentLevel < 4) {
                 currentLevel++;
-                alert("🎉 LEVEL UP! You are now a Level " + currentLevel + " Detective! 🎉");
+                alert("🎉 LEVEL UP! You are now investigating Level " + currentLevel + " cases! 🎉");
                 document.getElementById('level-display').innerText = "Level: " + getLevelName(currentLevel);
             }
             
             document.getElementById('score-display').innerText = "Score: " + score;
-            document.getElementById('next-btn').style.display = 'inline-block';
         } else {
-            feedbackEl.innerText = "Not quite! Try again.";
+            clickedBtn.classList.add('incorrect-btn');
+            allButtons[currentQuiz.correctIndex].classList.add('correct-btn'); // Show the right one
+            feedbackEl.innerText = "Oops! Look closely at the highlighted correct answer.";
             feedbackEl.className = "incorrect";
-            // Provide a hint based on the level
-            if (currentLevel === 1) hintEl.innerText = "Hint: Don't forget your capital letter at the start and period at the end!";
-            if (currentLevel === 2) hintEl.innerText = "Hint: Does this ask a question or show excitement?";
-            if (currentLevel === 3) hintEl.innerText = "Hint: Names and days of the week need capital letters too!";
-            if (currentLevel === 4) hintEl.innerText = "Hint: When listing 3 or more things, separate them with commas!";
         }
+
+        document.getElementById('next-btn').style.display = 'inline-block';
     }
 
     function nextSentence() {
         loadSentence();
     }
-
-    // Allow pressing "Enter" to check the answer
-    document.getElementById("user-input").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            if (document.getElementById('next-btn').style.display === 'inline-block') {
-                nextSentence();
-            } else {
-                checkAnswer();
-            }
-        }
-    });
 
     // Start the game
     loadSentence();
