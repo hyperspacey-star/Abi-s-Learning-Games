@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraction Master!</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: #e0f7fa;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 30px;
+            border: 4px solid #4CAF50;
+        }
+        h1 {
+            color: #2E7D32;
+            margin-bottom: 5px;
+        }
+        #level-indicator {
+            font-size: 1.2em;
+            color: #ff9800;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        #question-text {
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+        canvas {
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .options-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 25px;
+            font-size: 1.5em;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        #feedback {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+            min-height: 40px;
+        }
+        .correct { color: #2E7D32; }
+        .incorrect { color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>🍕 Fraction Master! 🟦</h1>
+    <div id="level-indicator">Level: 1</div>
+    <div id="question-text">Loading question...</div>
+    <canvas id="shapeCanvas" width="200" height="200" style="display: none;"></canvas>
+    <div id="options" class="options-container"></div>
+    <div id="feedback"></div>
+</div>
+
+<script>
+    const canvas = document.getElementById('shapeCanvas');
+    const ctx = canvas.getContext('2d');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options');
+    const feedbackText = document.getElementById('feedback');
+    const levelIndicator = document.getElementById('level-indicator');
+
+    let currentDifficulty = 1;
+    let correctAnswer = "";
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.display = 'none';
+    }
+
+    function drawCircle(total, shaded) {
+        canvas.style.display = 'inline-block';
+        const cx = 100, cy = 100, radius = 80;
+        for (let i = 0; i < total; i++) {
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, i * (2 * Math.PI / total), (i + 1) * (2 * Math.PI / total));
+            ctx.fillStyle = i < shaded ? '#4CAF50' : '#e0e0e0';
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
+
+    function drawRectangle(total, shaded) {
+        canvas.style.display = 'inline-block';
+        const width = 160, height = 60;
+        const startX = 20, startY = 70;
+        const partWidth = width / total;
+        
+        for (let i = 0; i < total; i++) {
+            ctx.beginPath();
+            ctx.rect(startX + (i * partWidth), startY, partWidth, height);
+            ctx.fillStyle = i < shaded ? '#4CAF50' : '#e0e0e0';
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function generateQuestion() {
+        clearCanvas();
+        feedbackText.innerText = "";
+        optionsContainer.innerHTML = "";
+        levelIndicator.innerText = "Level: " + currentDifficulty;
+
+        // Adaptive Logic based on currentDifficulty
+        let qType = currentDifficulty;
+        if (qType > 4) qType = Math.floor(Math.random() * 4) + 1; // Mix it up at max level
+
+        let totalParts, shadedParts;
+
+        if (qType === 1) {
+            // Level 1: Basic visual identification (Circle)
+            totalParts = Math.floor(Math.random() * 3) + 2; // 2 to 4 parts
+            shadedParts = Math.floor(Math.random() * (totalParts - 1)) + 1;
+            drawCircle(totalParts, shadedParts);
+            
+            questionText.innerText = "What fraction of the circle is shaded?";
+            correctAnswer = `${shadedParts}/${totalParts}`;
+            
+            let answers = [correctAnswer, `1/${totalParts}`, `${shadedParts}/${totalParts + 1}`, `${totalParts}/${shadedParts}`];
+            answers = [...new Set(answers)]; // Remove duplicates
+            if(answers.length < 3) answers.push("1/2"); // Fallback
+            createButtons(answers.slice(0, 3));
+            
+        } else if (qType === 2) {
+            // Level 2: Basic visual identification (Rectangle, larger numbers)
+            totalParts = Math.floor(Math.random() * 5) + 4; // 4 to 8 parts
+            shadedParts = Math.floor(Math.random() * (totalParts - 1)) + 1;
+            drawRectangle(totalParts, shadedParts);
+            
+            questionText.innerText = "What fraction of the rectangle is shaded?";
+            correctAnswer = `${shadedParts}/${totalParts}`;
+            
+            let answers = [correctAnswer, `${shadedParts}/${totalParts-1}`, `${totalParts}/${totalParts}`, `${shadedParts+1}/${totalParts}`];
+            answers = [...new Set(answers)];
+            createButtons(answers.slice(0, 3));
+
+        } else if (qType === 3) {
+            // Level 3: Unit Fractions (Based on Image 2)
+            totalParts = Math.floor(Math.random() * 6) + 3; // 3 to 8 parts
+            drawRectangle(totalParts, 0); // Unshaded
+            
+            questionText.innerText = `Look at the rectangle. It has ${totalParts} equal parts. What unit fraction names each part?`;
+            correctAnswer = `1/${totalParts}`;
+            
+            let answers = [correctAnswer, `${totalParts}/1`, `1/${totalParts-1}`, `1/2`];
+            answers = [...new Set(answers)];
+            createButtons(answers.slice(0, 3));
+
+        } else if (qType === 4) {
+            // Level 4: Word Problem / True or False (Based on Image 1)
+            totalParts = Math.floor(Math.random() * 4) + 3; // 3 to 6 parts
+            shadedParts = 1;
+            let unshadedParts = totalParts - shadedParts;
+            
+            // Sometimes generate a trick question like the worksheet
+            let isTrick = Math.random() > 0.5;
+            let claimedFraction = isTrick ? `1/${unshadedParts}` : `1/${totalParts}`;
+            
+            questionText.innerText = `Trang has a shape divided into equal parts. ${shadedParts} part is shaded, and the other ${unshadedParts} parts are not. Trang says her shape shows the fraction ${claimedFraction}. Is she correct?`;
+            
+            correctAnswer = isTrick ? "False" : "True";
+            createButtons(["True", "False"]);
+        }
+    }
+
+    function createButtons(answersArray) {
+        answersArray = shuffleArray(answersArray);
+        answersArray.forEach(ans => {
+            const btn = document.createElement('button');
+            btn.innerText = ans;
+            btn.onclick = () => checkAnswer(ans);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selected) {
+        // Disable buttons so they can't be clicked twice
+        const buttons = document.querySelectorAll('.options-container button');
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (selected === correctAnswer) {
+            feedbackText.innerHTML = "🎉 Correct! Great job! 🎉";
+            feedbackText.className = "correct";
+            currentDifficulty++; // Increase difficulty
+            setTimeout(generateQuestion, 2000);
+        } else {
+            feedbackText.innerHTML = `Oops! The correct answer was <b>${correctAnswer}</b>. Let's try another one like this!`;
+            feedbackText.className = "incorrect";
+            // Do NOT increase difficulty
+            setTimeout(generateQuestion, 3500);
+        }
+    }
+
+    // Start game
+    generateQuestion();
+</script>
+
+</body>
+</html>
