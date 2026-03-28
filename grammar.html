@@ -1,245 +1,231 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grammar Detective</title>
     <style>
-        body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #fffde7; text-align: center; margin: 0; touch-action: manipulation; }
-        h1 { color: #f57f17; font-size: 36px; margin-top: 10px; margin-bottom: 5px; }
-        
-        .card { background-color: white; padding: 25px; border-radius: 20px; margin: 10px auto; max-width: 800px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border: 3px solid #fbc02d; }
-        
-        .instruction { font-size: 22px; color: #555; margin-bottom: 20px; }
-        
-        /* Sentence Area */
-        #sentenceArea { 
-            margin: 40px 0; 
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: center; 
-            gap: 12px; 
-            font-size: 36px; 
-            align-items: center; 
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+            padding: 20px;
         }
-        
-        .word { 
-            padding: 8px 15px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            user-select: none; 
-            border: 3px solid transparent; 
-            background-color: #fafafa;
+        #game-container {
+            background-color: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
-        
-        .word:active { transform: scale(0.95); }
-        
-        .word.capitalized { 
-            background-color: #e3f2fd; 
-            border-color: #2196f3; 
-            color: #0d47a1; 
-            font-weight: bold; 
-            transform: translateY(-4px); 
-            box-shadow: 0 4px 0 #bbdefb;
+        h1 { color: #ff6b6b; }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin-bottom: 20px;
         }
-        
-        /* Punctuation Area */
-        .punc-label { font-size: 24px; font-weight: bold; color: #757575; margin-top: 30px; }
-        
-        #puncArea { margin: 15px 0 30px 0; display: flex; justify-content: center; gap: 20px; }
-        
-        .punc-btn { 
-            font-size: 45px; 
-            width: 80px; 
-            height: 80px; 
-            border-radius: 50%; 
-            border: 4px solid #e0e0e0; 
-            background-color: white; 
-            cursor: pointer; 
-            transition: all 0.2s; 
-            box-shadow: 0 5px 0 #e0e0e0; 
-            font-family: 'Comic Sans MS', Arial;
+        #sentence-display {
+            font-size: 1.8em;
+            background-color: #ffe66d;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
         }
-        
-        .punc-btn.selected { 
-            border-color: #f57f17; 
-            background-color: #fff9c4; 
-            color: #e65100; 
-            transform: translateY(5px); 
-            box-shadow: 0 0 0 transparent; 
+        input[type="text"] {
+            width: 90%;
+            font-size: 1.5em;
+            padding: 10px;
+            border: 3px solid #4ecdc4;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-family: inherit;
         }
-
-        /* Action Buttons */
-        .btn-action { background-color: #4caf50; color: white; padding: 20px 40px; font-size: 28px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 5px 0 #2e7d32; transition: transform 0.1s; }
-        .btn-action:active { transform: translateY(5px); box-shadow: none; }
-        
-        #nextBtn { background-color: #2196f3; box-shadow: 0 5px 0 #1565c0; display: none; margin: 0 auto; }
-        
-        #feedback { font-size: 28px; font-weight: bold; margin-top: 20px; min-height: 40px; }
-        #streakDisplay { font-size: 24px; color: #ff9800; font-weight: bold; margin-bottom: 10px; }
+        button {
+            font-size: 1.3em;
+            padding: 10px 30px;
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+        button:active { transform: translateY(2px); }
+        #feedback {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+            min-height: 30px;
+        }
+        .correct { color: #2ecc71; }
+        .incorrect { color: #e74c3c; }
+        .hint { font-size: 0.9em; color: #7f8c8d; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>🕵️‍♀️ Grammar Detective</h1>
-        <p class="instruction">Tap words to capitalize them. Then choose the right ending mark!</p>
-        
-        <div id="streakDisplay">🔥 Streak: 0</div>
-        
-        <div id="sentenceArea">
-            </div>
-
-        <div class="punc-label">How does it end?</div>
-        <div id="puncArea">
-            <button class="punc-btn" id="punc-period" onclick="selectPunc('.')">.</button>
-            <button class="punc-btn" id="punc-question" onclick="selectPunc('?')">?</button>
-            <button class="punc-btn" id="punc-exclaim" onclick="selectPunc('!')">!</button>
-        </div>
-
-        <button class="btn-action" id="checkBtn" onclick="checkAnswer()">Solve Case 🔍</button>
-        <button class="btn-action" id="nextBtn" onclick="nextSentence()">Next Case ➡️</button>
-
-        <div id="feedback"></div>
+<div id="game-container">
+    <h1>🔍 Grammar Detective</h1>
+    
+    <div class="stats">
+        <div id="level-display">Level: 1 (Easy)</div>
+        <div id="score-display">Score: 0</div>
     </div>
 
-    <script>
-        // 👇 EDIT YOUR SENTENCES HERE 👇
-        // text: The broken sentence (keep it all lowercase!)
-        // caps: Which words SHOULD be capitalized? (0 is the first word, 1 is the second, etc.)
-        // punc: The correct ending mark ('.', '?', or '!')
-        const cases = [
-            { text: "we went to the morro bay on monday", caps: [0, 4, 5, 7], punc: "." },
-            { text: "did abi see the dog", caps: [0, 1], punc: "?" },
-            { text: "wow that is a huge bug", caps: [0], punc: "!" },
-            { text: "i live in california", caps: [0, 3], punc: "." },
-            { text: "can we have pizza for dinner", caps: [0], punc: "?" },
-            { text: "mrs moore is my teacher", caps: [0, 1], punc: "." }
-        ];
-        // 👆 ---------------------- 👆
+    <p>Fix the sentence below! Add capital letters and punctuation.</p>
+    
+    <div id="sentence-display">loading...</div>
+    
+    <input type="text" id="user-input" placeholder="Type the correct sentence here..." autocomplete="off" spellcheck="false">
+    <br>
+    <button onclick="checkAnswer()">Check Answer</button>
+    <button onclick="nextSentence()" id="next-btn" style="display:none; background-color: #4ecdc4;">Next Sentence ➡️</button>
 
-        let currentCaseIndex = 0;
-        let words = [];
-        let capitalizedIndexes = new Set();
-        let selectedPunc = "";
-        let streak = 0;
+    <div id="feedback"></div>
+    <div id="hint" class="hint"></div>
+</div>
 
-        // Shuffle the cases so it's different every time
-        cases.sort(() => Math.random() - 0.5);
+<script>
+    // Sentence Database: Easy at first, getting harder!
+    const sentenceBank = [
+        // Level 1: Basic Capitalization and Periods
+        { level: 1, broken: "the cat is sleeping", fixed: "The cat is sleeping." },
+        { level: 1, broken: "i like to eat apples", fixed: "I like to eat apples." },
+        { level: 1, broken: "my dog is very fast", fixed: "My dog is very fast." },
+        { level: 1, broken: "we went to the park", fixed: "We went to the park." },
+        { level: 1, broken: "she has a red balloon", fixed: "She has a red balloon." },
+        { level: 1, broken: "the sun is shining today", fixed: "The sun is shining today." },
+        { level: 1, broken: "he plays with his toys", fixed: "He plays with his toys." },
+        { level: 1, broken: "i see a big blue bird", fixed: "I see a big blue bird." },
+        { level: 1, broken: "the frog jumps high", fixed: "The frog jumps high." },
+        { level: 1, broken: "my mom makes good cookies", fixed: "My mom makes good cookies." },
 
-        function loadSentence() {
-            let currentCase = cases[currentCaseIndex];
-            words = currentCase.text.split(" ");
-            capitalizedIndexes.clear();
-            selectedPunc = "";
+        // Level 2: Questions and Exclamations
+        { level: 2, broken: "where is my left shoe", fixed: "Where is my left shoe?" },
+        { level: 2, broken: "watch out for that car", fixed: "Watch out for that car!" },
+        { level: 2, broken: "can you help me read this", fixed: "Can you help me read this?" },
+        { level: 2, broken: "happy birthday to you", fixed: "Happy birthday to you!" },
+        { level: 2, broken: "what is your favorite color", fixed: "What is your favorite color?" },
+        { level: 2, broken: "i won the game", fixed: "I won the game!" },
+        { level: 2, broken: "how old are you", fixed: "How old are you?" },
+        { level: 2, broken: "that is so awesome", fixed: "That is so awesome!" },
+        { level: 2, broken: "are we there yet", fixed: "Are we there yet?" },
+        { level: 2, broken: "look at that huge dinosaur", fixed: "Look at that huge dinosaur!" },
 
-            // Reset UI
-            document.getElementById('feedback').innerText = "";
-            document.getElementById('checkBtn').style.display = 'inline-block';
-            document.getElementById('nextBtn').style.display = 'none';
+        // Level 3: Names and Days of the Week (Mid-sentence capitals)
+        { level: 3, broken: "sarah and i play on monday", fixed: "Sarah and I play on Monday." },
+        { level: 3, broken: "is mr smith your teacher", fixed: "Is Mr. Smith your teacher?" },
+        { level: 3, broken: "we go to florida in july", fixed: "We go to Florida in July." },
+        { level: 3, broken: "did tom see the movie", fixed: "Did Tom see the movie?" },
+        { level: 3, broken: "my friend emily is nice", fixed: "My friend Emily is nice." },
+        { level: 3, broken: "i love fridays at school", fixed: "I love Fridays at school!" },
+        { level: 3, broken: "can max come over to play", fixed: "Can Max come over to play?" },
+        { level: 3, broken: "santa comes in december", fixed: "Santa comes in December." },
+        { level: 3, broken: "dr jones is very smart", fixed: "Dr. Jones is very smart." },
+        { level: 3, broken: "i think halloween is fun", fixed: "I think Halloween is fun!" },
+
+        // Level 4: Lists (Commas)
+        { level: 4, broken: "i need eggs milk and bread", fixed: "I need eggs, milk, and bread." },
+        { level: 4, broken: "we saw lions tigers and bears", fixed: "We saw lions, tigers, and bears." },
+        { level: 4, broken: "she likes pink purple and blue", fixed: "She likes pink, purple, and blue." },
+        { level: 4, broken: "pack your shirt pants and socks", fixed: "Pack your shirt, pants, and socks." },
+        { level: 4, broken: "do you want apples grapes or plums", fixed: "Do you want apples, grapes, or plums?" },
+        { level: 4, broken: "i can run jump and skip", fixed: "I can run, jump, and skip." },
+        { level: 4, broken: "my pets are a dog a cat and a fish", fixed: "My pets are a dog, a cat, and a fish." },
+        { level: 4, broken: "he draws squares circles and stars", fixed: "He draws squares, circles, and stars." },
+        { level: 4, broken: "spring summer fall and winter", fixed: "Spring, summer, fall, and winter." },
+        { level: 4, broken: "i brought a pencil paper and an eraser", fixed: "I brought a pencil, paper, and an eraser." }
+    ];
+
+    let currentLevel = 1;
+    let score = 0;
+    let currentSentence = {};
+
+    function getLevelName(lvl) {
+        if (lvl === 1) return "1 (Easy: Capitals & Periods)";
+        if (lvl === 2) return "2 (Medium: ? and !)";
+        if (lvl === 3) return "3 (Hard: Names & Days)";
+        if (lvl === 4) return "4 (Expert: Commas)";
+        return "Max";
+    }
+
+    function loadSentence() {
+        // Filter sentences by current level
+        const availableSentences = sentenceBank.filter(s => s.level === currentLevel);
+        
+        // Pick a random sentence from the available ones
+        const randomIndex = Math.floor(Math.random() * availableSentences.length);
+        currentSentence = availableSentences[randomIndex];
+
+        // Update UI
+        document.getElementById('sentence-display').innerText = currentSentence.broken;
+        document.getElementById('user-input').value = '';
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('hint').innerText = '';
+        document.getElementById('next-btn').style.display = 'none';
+        
+        // Set focus back to input box
+        document.getElementById('user-input').focus();
+    }
+
+    function checkAnswer() {
+        const userInput = document.getElementById('user-input').value.trim();
+        const feedbackEl = document.getElementById('feedback');
+        const hintEl = document.getElementById('hint');
+
+        if (userInput === currentSentence.fixed) {
+            feedbackEl.innerText = "⭐ Fantastic! You got it right! ⭐";
+            feedbackEl.className = "correct";
+            hintEl.innerText = "";
+            score += 10;
             
-            // Unselect punctuation buttons
-            document.getElementById('punc-period').classList.remove('selected');
-            document.getElementById('punc-question').classList.remove('selected');
-            document.getElementById('punc-exclaim').classList.remove('selected');
-
-            // Build the sentence
-            const area = document.getElementById('sentenceArea');
-            area.innerHTML = "";
+            // Check for level up! (Every 50 points = next level)
+            if (score >= currentLevel * 50 && currentLevel < 4) {
+                currentLevel++;
+                alert("🎉 LEVEL UP! You are now a Level " + currentLevel + " Detective! 🎉");
+                document.getElementById('level-display').innerText = "Level: " + getLevelName(currentLevel);
+            }
             
-            words.forEach((word, index) => {
-                let span = document.createElement('span');
-                span.className = 'word';
-                span.innerText = word;
-                span.onclick = () => toggleCap(index, span);
-                area.appendChild(span);
-            });
+            document.getElementById('score-display').innerText = "Score: " + score;
+            document.getElementById('next-btn').style.display = 'inline-block';
+        } else {
+            feedbackEl.innerText = "Not quite! Try again.";
+            feedbackEl.className = "incorrect";
+            // Provide a hint based on the level
+            if (currentLevel === 1) hintEl.innerText = "Hint: Don't forget your capital letter at the start and period at the end!";
+            if (currentLevel === 2) hintEl.innerText = "Hint: Does this ask a question or show excitement?";
+            if (currentLevel === 3) hintEl.innerText = "Hint: Names and days of the week need capital letters too!";
+            if (currentLevel === 4) hintEl.innerText = "Hint: When listing 3 or more things, separate them with commas!";
         }
+    }
 
-        function toggleCap(index, element) {
-            let word = words[index];
-            if (capitalizedIndexes.has(index)) {
-                // Change to lowercase
-                capitalizedIndexes.delete(index);
-                element.innerText = word.toLowerCase();
-                element.classList.remove('capitalized');
-            } else {
-                // Change to uppercase
-                capitalizedIndexes.add(index);
-                element.innerText = word.charAt(0).toUpperCase() + word.slice(1);
-                element.classList.add('capitalized');
-            }
-        }
-
-        function selectPunc(mark) {
-            selectedPunc = mark;
-            document.getElementById('punc-period').classList.remove('selected');
-            document.getElementById('punc-question').classList.remove('selected');
-            document.getElementById('punc-exclaim').classList.remove('selected');
-
-            if(mark === '.') document.getElementById('punc-period').classList.add('selected');
-            if(mark === '?') document.getElementById('punc-question').classList.add('selected');
-            if(mark === '!') document.getElementById('punc-exclaim').classList.add('selected');
-        }
-
-        function checkAnswer() {
-            let currentCase = cases[currentCaseIndex];
-            let feedbackEl = document.getElementById('feedback');
-
-            if (selectedPunc === "") {
-                feedbackEl.innerText = "Don't forget to pick an ending mark!";
-                feedbackEl.style.color = "#f57f17";
-                return;
-            }
-
-            // Check if arrays match (they need to have the same items)
-            let correctCaps = currentCase.caps;
-            let playerCaps = Array.from(capitalizedIndexes);
-            
-            let isCapsCorrect = (correctCaps.length === playerCaps.length) && 
-                                correctCaps.every(val => playerCaps.includes(val));
-                                
-            let isPuncCorrect = (selectedPunc === currentCase.punc);
-
-            if (isCapsCorrect && isPuncCorrect) {
-                feedbackEl.innerText = "✅ Case Solved! Perfect grammar.";
-                feedbackEl.style.color = "#4caf50";
-                streak++;
-                document.getElementById('streakDisplay').innerText = `🔥 Streak: ${streak}`;
-                
-                document.getElementById('checkBtn').style.display = 'none';
-                document.getElementById('nextBtn').style.display = 'block';
-                
-                // Disable clicking on words
-                document.querySelectorAll('.word').forEach(w => w.style.pointerEvents = 'none');
-                document.querySelectorAll('.punc-btn').forEach(b => b.style.pointerEvents = 'none');
-            } else {
-                streak = 0;
-                document.getElementById('streakDisplay').innerText = `🔥 Streak: ${streak}`;
-                
-                if (!isCapsCorrect && !isPuncCorrect) {
-                    feedbackEl.innerText = "❌ Check your capitals AND your ending mark!";
-                } else if (!isCapsCorrect) {
-                    feedbackEl.innerText = "❌ The ending is right, but check your capital letters!";
-                } else {
-                    feedbackEl.innerText = "❌ Capitals are perfect! But read the sentence out loud to check the ending mark.";
-                }
-                feedbackEl.style.color = "#f44336";
-            }
-        }
-
-        function nextSentence() {
-            currentCaseIndex++;
-            if (currentCaseIndex >= cases.length) {
-                // Restart and reshuffle
-                currentCaseIndex = 0;
-                cases.sort(() => Math.random() - 0.5);
-            }
-            loadSentence();
-        }
-
-        // Start game
+    function nextSentence() {
         loadSentence();
-    </script>
+    }
+
+    // Allow pressing "Enter" to check the answer
+    document.getElementById("user-input").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            if (document.getElementById('next-btn').style.display === 'inline-block') {
+                nextSentence();
+            } else {
+                checkAnswer();
+            }
+        }
+    });
+
+    // Start the game
+    loadSentence();
+</script>
+
 </body>
 </html>
