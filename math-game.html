@@ -76,10 +76,24 @@
             background-color: #7b1fa2;
             transform: scale(1.05);
         }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
         button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
             transform: none;
+        }
+        .btn-hint {
+            background-color: #1e90ff; /* Blue styling from your vocab game */
+            font-size: 1.2em;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .btn-hint:hover {
+            background-color: #0073e6;
         }
         #feedback {
             font-size: 1.5em;
@@ -116,6 +130,9 @@
     </div>
     
     <div id="question-text">Loading question...</div>
+    
+    <button id="showMeBtn" class="btn-hint" onclick="showHint()">🔍 Show Me!</button>
+    
     <canvas id="mathCanvas" width="500" height="150" style="display: none;"></canvas>
     <div id="options" class="options-container"></div>
     <div id="feedback"></div>
@@ -130,12 +147,14 @@
     const levelIndicator = document.getElementById('level-indicator');
     const streakIndicator = document.getElementById('streak-indicator');
     const badgeContainer = document.getElementById('badge-container');
+    const showMeBtn = document.getElementById('showMeBtn');
 
     let currentDifficulty = 1;
     let correctAnswer = "";
     let streak = 0;
     let totalCorrect = 0;
     const maxLevel = 7;
+    let currentLevelOptions = []; // Stores options to draw hints
 
     const badges = [
         { threshold: 3, icon: '🌟', title: 'Star Scholar' },
@@ -148,16 +167,16 @@
     function updateStats() {
         levelIndicator.innerText = `Level: ${currentDifficulty}`;
         streakIndicator.innerText = `🔥 Streak: ${streak}`;
-        
-        // Update badges
         let earnedBadges = badges.filter(b => totalCorrect >= b.threshold).map(b => b.icon).join(' ');
         badgeContainer.innerText = earnedBadges || "Get 3 right to earn your first badge!";
     }
 
     function clearCanvas() {
+        canvas.height = 150; // Reset height
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         canvas.style.display = 'none';
-        optionsContainer.className = "options-container"; // reset class
+        optionsContainer.className = "options-container";
+        showMeBtn.style.display = 'none';
     }
 
     function drawCircle(total, shaded) {
@@ -180,25 +199,12 @@
         const width = canvas.width - (padding * 2);
         const startY = canvas.height / 2;
         
-        // Draw main line
         ctx.beginPath();
         ctx.moveTo(padding, startY);
         ctx.lineTo(padding + width, startY);
         ctx.lineWidth = 3;
         ctx.stroke();
         
-        // Draw arrows at ends
-        ctx.beginPath();
-        ctx.moveTo(padding, startY);
-        ctx.lineTo(padding + 10, startY - 5);
-        ctx.lineTo(padding + 10, startY + 5);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(padding + width, startY);
-        ctx.lineTo(padding + width - 10, startY - 5);
-        ctx.lineTo(padding + width - 10, startY + 5);
-        ctx.fill();
-
         const totalTicks = wholes * denominator;
         const tickSpacing = width / totalTicks;
 
@@ -207,7 +213,6 @@
             ctx.beginPath();
             ctx.moveTo(x, startY - 10);
             
-            // Whole numbers get longer ticks and labels
             if (i % denominator === 0) {
                 ctx.lineTo(x, startY + 15);
                 ctx.lineWidth = 3;
@@ -222,16 +227,68 @@
                 ctx.stroke();
             }
             
-            // Mark the target fraction with a big dot and a star
             if (i === targetNumerator) {
                 ctx.beginPath();
                 ctx.arc(x, startY, 6, 0, Math.PI * 2);
-                ctx.fillStyle = '#ff1744'; // Red dot
+                ctx.fillStyle = '#ff1744'; 
                 ctx.fill();
                 ctx.font = '24px Arial';
-                ctx.fillText('⭐', x, startY - 20); // Star above
+                ctx.fillText('⭐', x, startY - 20);
             }
         }
+    }
+
+    // New Function: Draws 4 stacked number lines to visualize the equivalence
+    function showHint() {
+        showMeBtn.style.display = 'none';
+        canvas.style.display = 'inline-block';
+        canvas.height = 320; // Make canvas taller for 4 lines
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const padding = 60;
+        const width = canvas.width - (padding * 2);
+        const startYBase = 40;
+        const spacing = 75;
+
+        currentLevelOptions.forEach((fracStr, index) => {
+            let [num, den] = fracStr.split('/').map(Number);
+            let startY = startYBase + (index * spacing);
+
+            // Draw line
+            ctx.beginPath();
+            ctx.moveTo(padding, startY);
+            ctx.lineTo(padding + width, startY);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#333';
+            ctx.stroke();
+
+            // Label fraction
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(fracStr, padding - 15, startY + 6);
+
+            // Draw ticks and marks
+            const tickSpacing = width / den;
+            for(let i = 0; i <= den; i++) {
+                let x = padding + (i * tickSpacing);
+                ctx.beginPath();
+                ctx.moveTo(x, startY - 8);
+                ctx.lineTo(x, startY + 8);
+                ctx.lineWidth = (i === 0 || i === den) ? 3 : 1.5;
+                ctx.stroke();
+
+                if(i === 0) { ctx.fillText("0", x + 10, startY + 25); }
+                if(i === den) { ctx.fillText("1", x + 10, startY + 25); }
+            }
+
+            // Place purple dot at the target numerator
+            let targetX = padding + (num * tickSpacing);
+            ctx.beginPath();
+            ctx.arc(targetX, startY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#9c27b0';
+            ctx.fill();
+        });
     }
 
     function shuffleArray(array) {
@@ -248,13 +305,10 @@
         optionsContainer.innerHTML = "";
         updateStats();
 
-        // Randomize questions slightly once max level is reached
         let qType = currentDifficulty > maxLevel ? Math.floor(Math.random() * maxLevel) + 1 : currentDifficulty;
-
         let totalParts, shadedParts, numerator, denominator;
 
         if (qType === 1 || qType === 2) {
-            // Level 1 & 2: Shapes
             totalParts = Math.floor(Math.random() * 4) + 2; 
             shadedParts = Math.floor(Math.random() * (totalParts - 1)) + 1;
             drawCircle(totalParts, shadedParts);
@@ -264,7 +318,6 @@
             createButtons([...new Set(answers)].slice(0, 3));
             
         } else if (qType === 3) {
-            // Level 3: Unit Fractions
             totalParts = Math.floor(Math.random() * 5) + 3;
             drawCircle(totalParts, 0); 
             questionText.innerText = `This shape has ${totalParts} equal parts. What unit fraction names ONE of those parts?`;
@@ -273,19 +326,17 @@
             createButtons([...new Set(answers)].slice(0, 3));
 
         } else if (qType === 4) {
-            // Level 4: Word Problem (True/False)
             totalParts = Math.floor(Math.random() * 4) + 3; 
             let unshadedParts = totalParts - 1;
             let isTrick = Math.random() > 0.5;
             let claimed = isTrick ? `1/${unshadedParts}` : `1/${totalParts}`;
-            questionText.innerHTML = `Abi has a circle. 1 part is shaded, and ${unshadedParts} parts are not.<br>Abi says her fraction is <b>${claimed}</b>. Is she correct?`;
+            questionText.innerHTML = `Trang has a circle. 1 part is shaded, and ${unshadedParts} parts are not.<br>Trang says her fraction is <b>${claimed}</b>. Is she correct?`;
             correctAnswer = isTrick ? "False" : "True";
             createButtons(["True", "False"]);
 
         } else if (qType === 5) {
-            // Level 5: Basic Number Line (0 to 1)
-            denominator = Math.floor(Math.random() * 5) + 3; // 3 to 7
-            numerator = Math.floor(Math.random() * (denominator - 1)) + 1; // 1 to denom-1
+            denominator = Math.floor(Math.random() * 5) + 3; 
+            numerator = Math.floor(Math.random() * (denominator - 1)) + 1; 
             drawNumberLine(1, denominator, numerator);
             questionText.innerText = "What fraction is marked by the star on the number line?";
             correctAnswer = `${numerator}/${denominator}`;
@@ -293,25 +344,24 @@
             createButtons([...new Set(answers)].slice(0, 3));
 
         } else if (qType === 6) {
-            // Level 6: Number Line > 1 (Improper fractions)
-            denominator = Math.floor(Math.random() * 3) + 2; // halves, thirds, fourths
-            let wholes = Math.floor(Math.random() * 2) + 2; // 2 or 3 wholes
-            numerator = denominator + Math.floor(Math.random() * (denominator * (wholes - 1))); // Greater than 1
+            denominator = Math.floor(Math.random() * 3) + 2; 
+            let wholes = Math.floor(Math.random() * 2) + 2; 
+            numerator = denominator + Math.floor(Math.random() * (denominator * (wholes - 1))); 
             
             drawNumberLine(wholes, denominator, numerator);
             questionText.innerText = "What fraction is marked by the star? (Hint: It's greater than 1!)";
             correctAnswer = `${numerator}/${denominator}`;
             
-            // Create plausible wrong answers
-            let wrong1 = `${numerator}/${denominator * wholes}`; // Common mistake: counting all ticks as denom
+            let wrong1 = `${numerator}/${denominator * wholes}`; 
             let wrong2 = `${numerator - denominator}/${denominator}`; 
             let wrong3 = `${numerator + 1}/${denominator}`;
             let answers = [correctAnswer, wrong1, wrong2, wrong3];
             createButtons([...new Set(answers)].slice(0, 4));
 
         } else if (qType === 7) {
-            // Level 7: Which one doesn't belong (Equivalence)
-            optionsContainer.className = "grid-options"; // Use a 2x2 grid
+            optionsContainer.className = "grid-options"; 
+            showMeBtn.style.display = 'inline-block'; // Show the hint button!
+            
             let sets = [
                 { eq: ["1/2", "2/4", "3/6", "4/8"], wrong: ["1/3", "2/3", "1/4"] },
                 { eq: ["1", "2/2", "3/3", "4/4"], wrong: ["1/2", "4/3", "0/4"] },
@@ -322,16 +372,15 @@
             let correctEquivalents = shuffleArray(chosenSet.eq).slice(0, 3);
             let outlier = chosenSet.wrong[Math.floor(Math.random() * chosenSet.wrong.length)];
             
-            questionText.innerHTML = "<b>Which One Doesn't Belong?</b><br>Three of these mean the same thing. Find the imposter!";
+            questionText.innerHTML = "<b>Which One Doesn't Belong?</b><br>Three of these mean the exact same thing. Find the imposter!";
             correctAnswer = outlier;
             
-            let answers = [...correctEquivalents, outlier];
-            createButtons(answers);
+            currentLevelOptions = shuffleArray([...correctEquivalents, outlier]);
+            createButtons(currentLevelOptions);
         }
     }
 
     function createButtons(answersArray) {
-        answersArray = shuffleArray(answersArray);
         answersArray.forEach(ans => {
             const btn = document.createElement('button');
             btn.innerText = ans;
@@ -343,6 +392,7 @@
     function checkAnswer(selected) {
         const buttons = document.querySelectorAll('#options button');
         buttons.forEach(btn => btn.disabled = true);
+        showMeBtn.style.display = 'none'; // Hide hint button on answer
 
         const praiseWords = ["Awesome!", "Brilliant!", "You nailed it!", "Superstar!", "Math Genius!"];
         const randomPraise = praiseWords[Math.floor(Math.random() * praiseWords.length)];
@@ -354,16 +404,15 @@
             feedbackText.className = "correct";
             
             if (currentDifficulty < maxLevel && streak % 2 === 0) {
-                // Level up every 2 correct in a row until max level
                 currentDifficulty++; 
             }
-            setTimeout(generateQuestion, 2000);
+            setTimeout(generateQuestion, 2500);
         } else {
-            streak = 0; // Reset streak, but don't drop level
-            feedbackText.innerHTML = `Oops! The correct answer was <b>${correctAnswer}</b>. You'll get the next one!`;
+            streak = 0; 
+            feedbackText.innerHTML = `Oops! The imposter was <b>${correctAnswer}</b>. You'll get the next one!`;
             feedbackText.className = "incorrect";
-            updateStats(); // Update to show lost streak
-            setTimeout(generateQuestion, 3500);
+            updateStats(); 
+            setTimeout(generateQuestion, 4000);
         }
     }
 
