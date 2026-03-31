@@ -1,93 +1,43 @@
-<style>
-    body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #f0f8ff; text-align: center; }
-    h1 { color: #ff4500; font-size: 36px; margin-bottom: 5px; }
-    h2 { color: #1e90ff; margin-top: 0; }
-    
-    .card { background-color: white; padding: 30px; border-radius: 15px; margin: 20px auto; max-width: 700px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
-    
-    button { background-color: #32cd32; color: white; padding: 20px 30px; font-size: 24px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 15px; }
-    button:active { transform: translateY(2px); box-shadow: none; }
-    .btn-blue { background-color: #1e90ff; }
-    .btn-pink { background-color: #ff69b4; }
-    .btn-audio { background-color: #ffa500; padding: 10px 20px; font-size: 20px; margin-bottom: 15px; } /* New audio button style */
-    
-    #wordDisplay { font-size: 60px; font-weight: bold; color: #4b0082; letter-spacing: 4px; min-height: 90px; margin: 20px 0; }
-    #timerDisplay { font-size: 24px; color: #ff0000; font-weight: bold; min-height: 35px; }
-    
-    #typeArea { display: none; margin-top: 20px; }
-    input[type="text"] { font-size: 30px; padding: 15px; text-align: center; width: 80%; border-radius: 10px; border: 3px solid #1e90ff; margin-bottom: 15px; }
-    
-    #feedback { font-size: 28px; font-weight: bold; margin-top: 20px; min-height: 40px; }
-    .tracker { margin-top: 30px; font-size: 24px; color: #555; font-weight: bold; }
-</style>
-
-<div id="setupScreen" class="card">
-    <h1>📝 Vocab Master</h1>
-    <p style="font-size: 24px;">Ready for this week's spelling challenge?</p>
-    <button class="btn-pink" onclick="startRound(1)">Start Round 1</button>
-</div>
-
-<div id="gameScreen" class="card" style="display: none;">
-    <h2 id="roundTitle">Round 1: 10 Seconds</h2>
-    <p id="instructions" style="font-size: 24px;">Look closely!</p>
-    
-    <div id="timerDisplay"></div>
-    <div id="wordDisplay">READY?</div>
-    
-    <div id="typeArea">
-        <button class="btn-audio" onclick="speakWord(currentWord)">🔊 Hear it again</button>
-        <br>
-        <input type="text" id="playerInput" placeholder="Type it here..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
-        <br>
-        <button class="btn-blue" onclick="checkWord()">Check Answer</button>
-    </div>
-
-    <div id="feedback"></div>
-
-    <div class="tracker">
-        <p>Word: <span id="currentWordNum">1</span> / <span id="totalWords">0</span></p>
-    </div>
-    
-    <button id="nextBtn" style="display:none;" onclick="nextWord()">Next Word ➡️</button>
-    <button id="retryBtn" class="btn-pink" style="display:none;" onclick="showWordTimer()">Study Again 👁️</button>
-    <button id="startRound2Btn" class="btn-pink" style="display:none;" onclick="startRound(2)">Start Lightning Round ⚡</button>
-</div>
-
-<div id="endScreen" class="card" style="display: none;">
-    <h1>🎉 AMAZING JOB! 🎉</h1>
-    <h2>Lightning Round Stats:</h2>
-    <p style="font-size: 24px;">You nailed <strong><span id="firstTryCount" style="color: #32cd32; font-size: 36px;">0</span></strong> out of <strong><span id="endTotalWords">0</span></strong> words on your VERY FIRST TRY!</p>
-    <p style="font-size: 20px; color: #555;">Your brain is growing like crazy. Keep up the great work!</p>
-    <button class="btn-blue" onclick="location.reload()">Play Again 🔄</button>
-</div>
-
 <script>
-    let words = [
+    // 👇 EDIT YOUR WEEKLY WORDS HERE 👇
+    let initialWords = [
         "spoil", "scout", "mouth", "proud", "noise", 
         "downpour", "soil", "south", "cloud", "shower"
     ];
+    // 👆 --------------------------------- 👆
 
-    let currentRound = 1;
-    let wordIndex = 0;
-    let lightningFirstTries = 0;
-    let attemptsThisWord = 0;
+    let currentQueue = [];
+    let missedWordsQueue = []; 
+    
+    let currentWordIndex = 0;
     let currentWord = "";
+    let currentLetterIndex = 0; 
+    
+    let mistakes = 0;
+    let mistakesOnCurrentLetter = 0;
+    let wordFailedThisRound = false;
+    let firstMistakeIndex = -1;
+    const maxMistakes = 6;
     let countdownInterval;
-    let currentAudio = null;
+    
+    // THE FIX: Create exactly ONE audio player for the entire game
+    let currentAudio = new Audio(); 
 
     function speakWord(word) {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
-        }
+        // Instead of making a new Audio object, we just change the file of our unlocked player
+        currentAudio.src = 'audio/' + word.toLowerCase() + '.wav';
         
-        currentAudio = new Audio('audio/' + word.toLowerCase() + '.wav');
         currentAudio.play().catch(function(error) {
-            console.log("Audio autoplay blocked by browser until direct interaction.");
+            // If the iPad blocks it, it will now pop up an alert telling you exactly why!
+            alert("iPad Audio Error: " + error.message + "\n\n(If it says 'Failed to load', check your GitHub 'audio' folder!)");
         });
     }
 
     function startRound(roundNum) {
+        // THE UNLOCK: When she taps the button, we quickly play a blank sound to get Apple's permission
+        currentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        currentAudio.play().catch(e => {});
+
         currentRound = roundNum;
         wordIndex = 0;
         
