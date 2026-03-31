@@ -6,38 +6,24 @@
     <style>
         body { font-family: 'Comic Sans MS', Arial, sans-serif; padding: 20px; background-color: #fbe9e7; text-align: center; margin: 0; touch-action: manipulation; }
         h1 { color: #d84315; font-size: 36px; margin-top: 10px; margin-bottom: 5px; }
-        
         .card { background-color: white; padding: 20px; border-radius: 15px; margin: 10px auto; max-width: 800px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 3px solid #ffab91; }
-        
         #livesDisplay { font-size: 40px; margin: 10px 0; min-height: 50px; }
-        
         #wordDisplay { font-size: 48px; font-weight: bold; color: #333; letter-spacing: 10px; margin: 20px 0; min-height: 70px; font-family: monospace; }
-        
-        .btn-audio { background-color: #ff5722; color: white; padding: 15px 30px; font-size: 24px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; margin-left: auto; margin-right: auto; gap: 10px; }
+        .btn-audio { background-color: #ff5722; color: white; padding: 15px 30px; font-size: 24px; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin-bottom: 20px; }
         .btn-audio:active { transform: translateY(3px); box-shadow: none; }
-        
         #keyboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; }
         .key { background-color: #fff; border: 3px solid #ffccbc; color: #d84315; font-size: 28px; font-weight: bold; width: 55px; height: 65px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #ffccbc; font-family: 'Comic Sans MS', Arial; transition: background-color 0.2s; }
         .key:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
-        .key:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
-        
         .key.flash-correct { background-color: #c8e6c9 !important; border-color: #4caf50 !important; color: #2e7d32 !important; }
         .key.flash-wrong { background-color: #ffcdd2 !important; border-color: #f44336 !important; color: #c62828 !important; }
-
-        /* Review Phase Styles */
-        .review-btn { display: block; width: 80%; max-width: 400px; margin: 15px auto; padding: 20px; font-size: 32px; background-color: #e3f2fd; border: 3px solid #2196f3; color: #0d47a1; border-radius: 15px; cursor: pointer; font-family: monospace; font-weight: bold; box-shadow: 0 5px 0 #1976d2; transition: transform 0.1s; text-transform: uppercase; letter-spacing: 5px; }
+        .review-btn { display: block; width: 80%; max-width: 400px; margin: 15px auto; padding: 20px; font-size: 32px; background-color: #e3f2fd; border: 3px solid #2196f3; color: #0d47a1; border-radius: 15px; cursor: pointer; font-family: monospace; font-weight: bold; box-shadow: 0 5px 0 #1976d2; transition: transform 0.1s; letter-spacing: 5px; }
         .review-btn:active { transform: translateY(5px); box-shadow: none; }
-        .review-btn.wrong-choice { background-color: #ffcdd2; border-color: #f44336; color: #b71c1c; box-shadow: 0 5px 0 #d32f2f; }
-        .review-btn.correct-choice { background-color: #c8e6c9; border-color: #4caf50; color: #1b5e20; box-shadow: 0 5px 0 #388e3c; }
-
+        .review-btn.wrong-choice { background-color: #ffcdd2; border-color: #f44336; color: #b71c1c; }
+        .review-btn.correct-choice { background-color: #c8e6c9; border-color: #4caf50; color: #1b5e20; }
         #gameArea, #reviewArea, #endScreen { display: none; }
-        
         .btn-start { background-color: #d84315; color: white; padding: 20px 40px; font-size: 28px; border: none; border-radius: 15px; cursor: pointer; font-weight: bold; margin-top: 30px; box-shadow: 0 5px 0 #bf360c; }
-        .btn-start:active { transform: translateY(5px); box-shadow: none; }
-
         #message { font-size: 28px; font-weight: bold; margin-top: 10px; min-height: 40px; color: #ff9800; }
         #clueDisplay { font-size: 24px; font-weight: bold; color: #1976d2; min-height: 35px; margin-top: 5px; }
-        
         .mode-badge { background-color: #ff5252; color: white; padding: 5px 15px; border-radius: 20px; font-size: 16px; font-weight: bold; letter-spacing: 2px; display: inline-block; margin-bottom: 10px; }
     </style>
 </head>
@@ -52,7 +38,7 @@
 
     <div class="card" id="gameArea">
         <div id="livesDisplay">❤️❤️❤️❤️❤️❤️</div>
-        <button class="btn-audio" onclick="playAudio()">🔊 Listen to the Clue</button>
+        <button class="btn-audio" onclick="playAudio()">🔊 Listen to Word</button>
         <div id="wordDisplay">_ _ _ _ _</div>
         <div id="clueDisplay"></div>
         <div id="message"></div>
@@ -63,7 +49,7 @@
     <div class="card" id="reviewArea">
         <h1>🔍 Visual Review</h1>
         <p style="font-size: 24px; color: #555;">You missed a few! Which one is spelled correctly?</p>
-        <button class="btn-audio" onclick="playAudio()" style="background-color: #2196f3; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔊 Listen to the Clue</button>
+        <button class="btn-audio" onclick="playAudio()" style="background-color: #2196f3; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔊 Listen to Word</button>
         <div id="reviewOptions"></div>
         <button id="nextReviewBtn" class="btn-start" style="display: none; margin: auto; margin-top: 20px; background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32;" onclick="nextReview()">Continue ➡️</button>
     </div>
@@ -75,41 +61,29 @@
     </div>
 
     <script>
-        // 👇 EDIT YOUR WEEKLY WORDS HERE 👇
-        let initialWords = [
-            "spoil",
-            "scout",
-            "mouth",
-            "proud",
-            "noise",
-            "downpour",
-            "soil",
-            "south",
-            "cloud",
-            "shower"
-        ];
-        // 👆 --------------------------------- 👆
+        let initialWords = ["spoil", "scout", "mouth", "proud", "noise", "downpour", "soil", "south", "cloud", "shower"];
 
         let currentQueue = [];
         let missedWordsQueue = []; 
-        
         let currentWordIndex = 0;
         let currentWord = "";
         let currentLetterIndex = 0; 
-        
         let mistakes = 0;
         let mistakesOnCurrentLetter = 0;
         let wordFailedThisRound = false;
         let firstMistakeIndex = -1;
         const maxMistakes = 6;
-        let audioCtx;
-        let currentAudio = null;
+        
+        // Single Audio Player Fix
+        let currentAudio = new Audio();
+        currentAudio.onerror = function() { alert("🚨 FILE NOT FOUND 🚨\n\nLooking for:\n" + currentAudio.src); };
+
+        let audioCtx; // For the synth sounds (buzz, ding, fart)
 
         function startGame() {
             currentQueue = [...initialWords];
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
-            
             startSpellingPhase();
         }
 
@@ -117,14 +91,12 @@
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('reviewArea').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
-            
             currentWordIndex = 0;
             missedWordsQueue = [];
             loadWord();
         }
 
         function loadWord() {
-            // Because our words are uppercase in the display, we format it right away
             currentWord = currentQueue[currentWordIndex].toUpperCase();
             currentLetterIndex = 0;
             mistakes = 0;
@@ -140,22 +112,15 @@
             updateLivesDisplay();
             updateWordDisplay();
             buildKeyboard();
-            
-            playAudio();
         }
 
         function playAudio() {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-            }
-            
-            currentAudio = new Audio('audio/' + currentWord.toLowerCase() + '.wav');
-            currentAudio.play().catch(function(error) {
-                console.log("Audio autoplay blocked by browser until direct interaction.");
-            });
+            // Plays the specific .wav file
+            currentAudio.src = 'audio/' + currentWord.toLowerCase() + '.wav';
+            currentAudio.play().catch(e => alert("Audio blocked. Try tapping again!"));
         }
         
+        // Internal Synth Sounds
         function playTone(type, freq, dur) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             let osc = audioCtx.createOscillator();
@@ -193,30 +158,24 @@
 
         function playVictoryFanfare() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-
             const chords = [
                 { frequencies: [261.63, 329.63, 392.00], duration: 0.4, startTime: 0 },
                 { frequencies: [349.23, 440.00, 523.25], duration: 0.4, startTime: 0.4 },
                 { frequencies: [392.00, 493.88, 587.33], duration: 0.4, startTime: 0.8 },
                 { frequencies: [261.63, 329.63, 392.00, 523.25], duration: 1.5, startTime: 1.2 }
             ];
-
             chords.forEach(chord => {
                 chord.frequencies.forEach(freq => {
                     let osc = audioCtx.createOscillator();
                     let gain = audioCtx.createGain();
-                    
                     osc.type = 'triangle'; 
                     osc.frequency.value = freq;
-                    
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
-                    
                     gain.gain.setValueAtTime(0, audioCtx.currentTime + chord.startTime);
                     gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + chord.startTime + 0.05);
                     gain.gain.setValueAtTime(0.2, audioCtx.currentTime + chord.startTime + chord.duration - 0.1);
                     gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + chord.startTime + chord.duration);
-                    
                     osc.start(audioCtx.currentTime + chord.startTime);
                     osc.stop(audioCtx.currentTime + chord.startTime + chord.duration);
                 });
@@ -309,10 +268,7 @@
 
         function processNext() {
             if (wordFailedThisRound) {
-                missedWordsQueue.push({
-                    word: currentWord,
-                    errorIndex: firstMistakeIndex > -1 ? firstMistakeIndex : 0
-                });
+                missedWordsQueue.push({ word: currentWord, errorIndex: firstMistakeIndex > -1 ? firstMistakeIndex : 0 });
             }
 
             currentWordIndex++;
@@ -340,7 +296,7 @@
 
         function generateDistractors(reviewItem) {
             let options = new Set();
-            let targetWord = reviewItem.word;
+            let targetWord = reviewItem.word.toUpperCase();
             options.add(targetWord); 
             
             let expectedLetter = targetWord[reviewItem.errorIndex];
@@ -357,18 +313,15 @@
                     options.add(badWord);
                 }
             }
-            
             return Array.from(options).sort(() => 0.5 - Math.random());
         }
 
         function loadReviewWord() {
             document.getElementById('nextReviewBtn').style.display = 'none';
-            
             let currentReview = missedWordsQueue[reviewIndex];
-            currentWord = currentReview.word;
+            currentWord = currentReview.word.toUpperCase(); 
             
             let options = generateDistractors(currentReview);
-            
             const optionsDiv = document.getElementById('reviewOptions');
             optionsDiv.innerHTML = '';
             
@@ -379,7 +332,6 @@
                 btn.onclick = () => checkReviewAnswer(opt, currentWord, btn);
                 optionsDiv.appendChild(btn);
             });
-            
             playAudio();
         }
 
@@ -394,11 +346,7 @@
             } else {
                 playWrongBuzz();
                 btnElement.classList.add('wrong-choice');
-                
-                allBtns.forEach(b => {
-                    if (b.innerText === correct) b.classList.add('correct-choice');
-                });
-                
+                allBtns.forEach(b => { if (b.innerText === correct) b.classList.add('correct-choice'); });
                 document.getElementById('nextReviewBtn').style.display = 'block';
             }
         }
@@ -406,7 +354,6 @@
         function nextReview() {
             reviewIndex++;
             if (reviewIndex >= missedWordsQueue.length) {
-                // Return to spelling phase with ONLY the missed words
                 currentQueue = missedWordsQueue.map(item => item.word);
                 startSpellingPhase();
             } else {
