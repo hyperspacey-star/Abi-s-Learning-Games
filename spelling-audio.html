@@ -22,6 +22,11 @@
     
     // THE FIX: Create exactly ONE audio player for the entire game
     let currentAudio = new Audio(); 
+    
+    // This forces an alert if the file is missing or named incorrectly!
+    currentAudio.onerror = function() {
+        alert("🚨 FILE NOT FOUND 🚨\n\nThe iPad is looking for:\n" + currentAudio.src + "\n\nCheck your GitHub folder and file names!");
+    };
 
     function speakWord(word) {
         // Instead of making a new Audio object, we just change the file of our unlocked player
