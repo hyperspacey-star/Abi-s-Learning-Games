@@ -52,7 +52,7 @@
 
     <div class="card" id="gameArea">
         <div id="livesDisplay">❤️❤️❤️❤️❤️❤️</div>
-        <button class="btn-audio" onclick="playAudio()">🔊 Hear Word Again</button>
+        <button class="btn-audio" onclick="playAudio()">🔊 Listen to the Clue</button>
         <div id="wordDisplay">_ _ _ _ _</div>
         <div id="clueDisplay"></div>
         <div id="message"></div>
@@ -63,7 +63,7 @@
     <div class="card" id="reviewArea">
         <h1>🔍 Visual Review</h1>
         <p style="font-size: 24px; color: #555;">You missed a few! Which one is spelled correctly?</p>
-        <button class="btn-audio" onclick="playAudio()" style="background-color: #2196f3; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔊 Hear Word</button>
+        <button class="btn-audio" onclick="playAudio()" style="background-color: #2196f3; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">🔊 Listen to the Clue</button>
         <div id="reviewOptions"></div>
         <button id="nextReviewBtn" class="btn-start" style="display: none; margin: auto; margin-top: 20px; background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32;" onclick="nextReview()">Continue ➡️</button>
     </div>
@@ -75,28 +75,23 @@
     </div>
 
     <script>
-        // 👇 EDIT YOUR WEEKLY WORDS RIGHT HERE 👇
+        // 👇 EDIT YOUR WEEKLY WORDS & PRONUNCIATION HERE 👇
+        // word: The actual spelling she needs to type.
+        // spokenText: The phonetic sound-it-out version. Use commas for pauses!
         let initialWords = [
-            "point",
-            "sprout",
-            "moisture",
-            "shower",
-            "cloud",
-            "south",
-            "soil",
-            "downpour",
-            "noise",
-            "proud",
-            "mouth",
-            "scout",
-            "spoil"
+            { word: "guest", spokenText: "g, est." },
+            { word: "apple", spokenText: "ap, pull." },
+            { word: "banana", spokenText: "buh, nan, uh." },
+            { word: "orange", spokenText: "or, inj." },
+            { word: "grape", spokenText: "grr, ape." }
         ];
-        // 👆 --------------------------------- 👆
+        // 👆 ------------------------------------------ 👆
 
         let currentQueue = [];
         let missedWordsQueue = []; 
         
         let currentWordIndex = 0;
+        let currentWordObj = null;
         let currentWord = "";
         let currentLetterIndex = 0; 
         
@@ -129,7 +124,8 @@
         }
 
         function loadWord() {
-            currentWord = currentQueue[currentWordIndex].toUpperCase();
+            currentWordObj = currentQueue[currentWordIndex];
+            currentWord = currentWordObj.word.toUpperCase();
             currentLetterIndex = 0;
             mistakes = 0;
             mistakesOnCurrentLetter = 0;
@@ -151,24 +147,22 @@
         function playAudio() {
             window.speechSynthesis.cancel();
             
-            // Add a period to force a hard consonant stop at the end
-            let utterance = new SpeechSynthesisUtterance(currentWord + ".");
-            utterance.rate = 0.9; 
+            // Speak the hidden phonetic string, not the raw word!
+            let utterance = new SpeechSynthesisUtterance(currentWordObj.spokenText);
+            
+            // Slow the rate down to emphasize the comma pauses
+            utterance.rate = 0.75; 
 
             window.speechSynthesis.speak(utterance);
         }
 
         function speakPraise() {
             let praises = [
-                "good job", 
+                "good job Abi", 
                 "nice", 
                 "you got this", 
                 "dang girlfriend", 
-                "you're killing it",
-                "the monkey can learn",
-                "who's smart, your smart",
-                "awesome",
-                "Give me a A, give me a B, give me an I, what does that spell, ABI, ABI ABI!"
+                "you're killing it"
             ];
             let randomPraise = praises[Math.floor(Math.random() * praises.length)];
             
@@ -216,12 +210,11 @@
         function playVictoryFanfare() {
             if (audioCtx.state === 'suspended') audioCtx.resume();
 
-            // A triumphant, ascending major chord progression
             const chords = [
-                { frequencies: [261.63, 329.63, 392.00], duration: 0.4, startTime: 0 },       // C major
-                { frequencies: [349.23, 440.00, 523.25], duration: 0.4, startTime: 0.4 },     // F major
-                { frequencies: [392.00, 493.88, 587.33], duration: 0.4, startTime: 0.8 },     // G major
-                { frequencies: [261.63, 329.63, 392.00, 523.25], duration: 1.5, startTime: 1.2 } // High C major
+                { frequencies: [261.63, 329.63, 392.00], duration: 0.4, startTime: 0 },
+                { frequencies: [349.23, 440.00, 523.25], duration: 0.4, startTime: 0.4 },
+                { frequencies: [392.00, 493.88, 587.33], duration: 0.4, startTime: 0.8 },
+                { frequencies: [261.63, 329.63, 392.00, 523.25], duration: 1.5, startTime: 1.2 }
             ];
 
             chords.forEach(chord => {
@@ -229,7 +222,7 @@
                     let osc = audioCtx.createOscillator();
                     let gain = audioCtx.createGain();
                     
-                    osc.type = 'triangle'; // Gives a nice synth-brass feel
+                    osc.type = 'triangle'; 
                     osc.frequency.value = freq;
                     
                     osc.connect(gain);
@@ -337,7 +330,7 @@
         function processNext() {
             if (wordFailedThisRound) {
                 missedWordsQueue.push({
-                    word: currentWord,
+                    wordObj: currentWordObj,
                     errorIndex: firstMistakeIndex > -1 ? firstMistakeIndex : 0
                 });
             }
@@ -349,7 +342,6 @@
                 } else {
                     document.getElementById('gameArea').style.display = 'none';
                     document.getElementById('endScreen').style.display = 'block';
-                    // Trigger the grand finale music!
                     playVictoryFanfare();
                 }
             } else {
@@ -366,11 +358,12 @@
             loadReviewWord();
         }
 
-        function generateDistractors(wordObj) {
+        function generateDistractors(reviewItem) {
             let options = new Set();
-            options.add(wordObj.word); 
+            let targetWord = reviewItem.wordObj.word.toUpperCase();
+            options.add(targetWord); 
             
-            let expectedLetter = wordObj.word[wordObj.errorIndex];
+            let expectedLetter = targetWord[reviewItem.errorIndex];
             let vowels = "AEIOU".split("");
             let consonants = "BCDFGHJKLMNPQRSTVWXYZ".split("");
             
@@ -380,7 +373,7 @@
             for (let char of pool) {
                 if (options.size >= 5) break; 
                 if (char !== expectedLetter) {
-                    let badWord = wordObj.word.substring(0, wordObj.errorIndex) + char + wordObj.word.substring(wordObj.errorIndex + 1);
+                    let badWord = targetWord.substring(0, reviewItem.errorIndex) + char + targetWord.substring(reviewItem.errorIndex + 1);
                     options.add(badWord);
                 }
             }
@@ -392,7 +385,8 @@
             document.getElementById('nextReviewBtn').style.display = 'none';
             
             let currentReview = missedWordsQueue[reviewIndex];
-            currentWord = currentReview.word; 
+            currentWordObj = currentReview.wordObj; 
+            currentWord = currentWordObj.word.toUpperCase();
             
             let options = generateDistractors(currentReview);
             
@@ -403,7 +397,7 @@
                 let btn = document.createElement('button');
                 btn.className = 'review-btn';
                 btn.innerText = opt;
-                btn.onclick = () => checkReviewAnswer(opt, currentReview.word, btn);
+                btn.onclick = () => checkReviewAnswer(opt, currentWord, btn);
                 optionsDiv.appendChild(btn);
             });
             
@@ -433,7 +427,8 @@
         function nextReview() {
             reviewIndex++;
             if (reviewIndex >= missedWordsQueue.length) {
-                currentQueue = missedWordsQueue.map(item => item.word);
+                // Return to spelling phase with ONLY the missed objects
+                currentQueue = missedWordsQueue.map(item => item.wordObj);
                 startSpellingPhase();
             } else {
                 loadReviewWord();
