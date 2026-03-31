@@ -128,13 +128,39 @@
         let mistakes = 0;
         const maxMistakes = 6;
 
+        // --- NEW: Voice Selection Logic ---
+        let preferredVoice = null;
+
+        function loadVoices() {
+            let voices = window.speechSynthesis.getVoices();
+            // Hunt for high-quality English voices rather than the default robot
+            preferredVoice = 
+                voices.find(v => v.name.includes("Google US English")) ||
+                voices.find(v => v.name.includes("Samantha")) || // Great native iOS/Mac voice
+                voices.find(v => v.name.includes("Alex")) ||     // Super clear Mac voice
+                voices.find(v => v.name.includes("Zira")) ||     // Clear Windows voice
+                voices.find(v => v.name.includes("Premium") && v.lang.startsWith("en")) ||
+                voices.find(v => v.lang.startsWith("en-US")) ||
+                voices[0];
+        }
+
+        // Browsers load voices asynchronously, we have to listen for them to be ready
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        } else {
+            loadVoices(); // Fallback for some browsers
+        }
+        // ----------------------------------
+
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
             loadWord();
             
-            // iPad requires user interaction to initialize speech engine
-            let dummySpeech = new SpeechSynthesisUtterance("");
+            // iPad requires user interaction to initialize speech engine. 
+            // Using actual text but muting it ensures the engine wakes up properly.
+            let dummySpeech = new SpeechSynthesisUtterance("Start");
+            dummySpeech.volume = 0; 
             window.speechSynthesis.speak(dummySpeech);
         }
 
@@ -159,9 +185,21 @@
             // Cancels any currently talking voice so they don't overlap
             window.speechSynthesis.cancel();
             
-            let utterance = new SpeechSynthesisUtterance(currentWord);
-            // Slow the voice down slightly for learning (1.0 is normal, 0.8 is slightly slower)
-            utterance.rate = 0.85; 
+            // THE CONTEXT HACK: Adding a phrase and punctuation forces the TTS engine 
+            // into a natural speech rhythm, making it enunciate the final word much more clearly.
+            let textToSpeak = "Spell... " + currentWord + "."; 
+            
+            let utterance = new SpeechSynthesisUtterance(textToSpeak);
+            
+            // Attach our high-quality voice if we found one
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
+
+            // Tuned for spelling: slightly slower rate, slightly higher pitch for clarity
+            utterance.rate = 0.75; 
+            utterance.pitch = 1.1; 
+            
             window.speechSynthesis.speak(utterance);
         }
 
@@ -189,6 +227,7 @@
                 
                 // Read the word one last time with a congratulatory tone
                 let winAudio = new SpeechSynthesisUtterance("Good job! " + currentWord);
+                if (preferredVoice) winAudio.voice = preferredVoice;
                 window.speechSynthesis.speak(winAudio);
             }
         }
