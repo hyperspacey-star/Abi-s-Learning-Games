@@ -9,6 +9,7 @@
     button:active { transform: translateY(2px); box-shadow: none; }
     .btn-blue { background-color: #1e90ff; }
     .btn-pink { background-color: #ff69b4; }
+    .btn-audio { background-color: #ffa500; padding: 10px 20px; font-size: 20px; margin-bottom: 15px; } /* New audio button style */
     
     #wordDisplay { font-size: 60px; font-weight: bold; color: #4b0082; letter-spacing: 4px; min-height: 90px; margin: 20px 0; }
     #timerDisplay { font-size: 24px; color: #ff0000; font-weight: bold; min-height: 35px; }
@@ -34,6 +35,8 @@
     <div id="wordDisplay">READY?</div>
     
     <div id="typeArea">
+        <button class="btn-audio" onclick="speakWord(currentWord, true)">🔊 Hear it again</button>
+        <br>
         <input type="text" id="playerInput" placeholder="Type it here..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
         <br>
         <button class="btn-blue" onclick="checkWord()">Check Answer</button>
@@ -59,24 +62,50 @@
 </div>
 
 <script>
-    // 👇 EDIT YOUR WEEKLY WORDS RIGHT HERE 👇
-    // Make sure each word has quotes around it and a comma after it!
+    // --- NEW SPEECH SYNTHESIS SETUP ---
+    const synth = window.speechSynthesis;
+    let voices = [];
+
+    // Browsers load voices asynchronously, so we have to catch them when they are ready
+    function populateVoiceList() {
+        voices = synth.getVoices();
+    }
+    populateVoiceList();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+
+    function speakWord(word, isRepeat = false) {
+        // Cancel any currently playing speech to avoid overlapping
+        synth.cancel();
+
+        // The "Wrapper Trick": Put the word in a sentence so the browser enunciates it better
+        let phraseToSpeak = isRepeat ? `Again, ${word}` : `The word is... ${word}`;
+        
+        const utterThis = new SpeechSynthesisUtterance(phraseToSpeak);
+        
+        // Find a high quality English voice (Prefer Google/Premium over basic OS ones)
+        const englishVoices = voices.filter(v => v.lang.startsWith('en'));
+        const premiumVoice = englishVoices.find(v => v.name.includes('Google') || v.name.includes('Premium'));
+        
+        if (premiumVoice) {
+            utterThis.voice = premiumVoice;
+        } else if (englishVoices.length > 0) {
+            utterThis.voice = englishVoices[0]; // Fallback to first English voice
+        }
+
+        utterThis.rate = 0.75; // Slow it down for clarity (1 is default)
+        utterThis.pitch = 1;
+        
+        synth.speak(utterThis);
+    }
+    // ----------------------------------
+
     let words = [
-        "point",
-            "sprout",
-            "moisture",
-            "shower",
-            "cloud",
-            "south",
-            "soil",
-            "downpour",
-            "noise",
-            "proud",
-            "mouth",
-            "scout",
-            "spoil"
+        "point", "sprout", "moisture", "shower", "cloud", 
+        "south", "soil", "downpour", "noise", "proud", 
+        "mouth", "scout", "spoil"
     ];
-    // 👆 --------------------------------- 👆
 
     let currentRound = 1;
     let wordIndex = 0;
@@ -95,6 +124,10 @@
         document.getElementById('roundTitle').innerText = currentRound === 1 ? "Round 1: 10 Second Study" : "⚡ Round 2: 5 Second Lightning! ⚡";
         document.getElementById('startRound2Btn').style.display = 'none';
         
+        // Wake up the speech engine on first user click (browsers require this)
+        let wakeUp = new SpeechSynthesisUtterance("");
+        synth.speak(wakeUp);
+
         playTurn();
     }
 
@@ -107,6 +140,9 @@
         document.getElementById('retryBtn').style.display = 'none';
         
         showWordTimer();
+        
+        // Speak the word when it appears on screen
+        speakWord(currentWord, false);
     }
 
     function showWordTimer() {
