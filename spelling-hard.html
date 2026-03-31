@@ -75,23 +75,25 @@
     </div>
 
     <script>
-        // 👇 EDIT YOUR WEEKLY WORDS & PRONUNCIATION HERE 👇
-        // word: The actual spelling she needs to type.
-        // spokenText: The phonetic sound-it-out version. Use commas for pauses!
+        // 👇 EDIT YOUR WEEKLY WORDS HERE 👇
         let initialWords = [
-            { word: "guest", spokenText: "g, est." },
-            { word: "apple", spokenText: "ap, pull." },
-            { word: "banana", spokenText: "buh, nan, uh." },
-            { word: "orange", spokenText: "or, inj." },
-            { word: "grape", spokenText: "grr, ape." }
+            "spoil",
+            "scout",
+            "mouth",
+            "proud",
+            "noise",
+            "downpour",
+            "soil",
+            "south",
+            "cloud",
+            "shower"
         ];
-        // 👆 ------------------------------------------ 👆
+        // 👆 --------------------------------- 👆
 
         let currentQueue = [];
         let missedWordsQueue = []; 
         
         let currentWordIndex = 0;
-        let currentWordObj = null;
         let currentWord = "";
         let currentLetterIndex = 0; 
         
@@ -101,14 +103,12 @@
         let firstMistakeIndex = -1;
         const maxMistakes = 6;
         let audioCtx;
+        let currentAudio = null;
 
         function startGame() {
             currentQueue = [...initialWords];
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
-            
-            let dummySpeech = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(dummySpeech);
             
             startSpellingPhase();
         }
@@ -124,8 +124,8 @@
         }
 
         function loadWord() {
-            currentWordObj = currentQueue[currentWordIndex];
-            currentWord = currentWordObj.word.toUpperCase();
+            // Because our words are uppercase in the display, we format it right away
+            currentWord = currentQueue[currentWordIndex].toUpperCase();
             currentLetterIndex = 0;
             mistakes = 0;
             mistakesOnCurrentLetter = 0;
@@ -141,35 +141,19 @@
             updateWordDisplay();
             buildKeyboard();
             
-            setTimeout(playAudio, 500);
+            playAudio();
         }
 
         function playAudio() {
-            window.speechSynthesis.cancel();
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
             
-            // Speak the hidden phonetic string, not the raw word!
-            let utterance = new SpeechSynthesisUtterance(currentWordObj.spokenText);
-            
-            // Slow the rate down to emphasize the comma pauses
-            utterance.rate = 0.75; 
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function speakPraise() {
-            let praises = [
-                "good job Abi", 
-                "nice", 
-                "you got this", 
-                "dang girlfriend", 
-                "you're killing it"
-            ];
-            let randomPraise = praises[Math.floor(Math.random() * praises.length)];
-            
-            let utterance = new SpeechSynthesisUtterance(randomPraise);
-            utterance.rate = 0.9;
-
-            window.speechSynthesis.speak(utterance);
+            currentAudio = new Audio('audio/' + currentWord.toLowerCase() + '.wav');
+            currentAudio.play().catch(function(error) {
+                console.log("Audio autoplay blocked by browser until direct interaction.");
+            });
         }
         
         function playTone(type, freq, dur) {
@@ -252,10 +236,6 @@
                 document.getElementById('message').style.color = wordFailedThisRound ? "#f57f17" : "#4caf50";
                 document.getElementById('keyboard').style.pointerEvents = "none";
                 document.getElementById('nextBtn').style.display = 'block';
-                
-                if (!wordFailedThisRound) {
-                    speakPraise();
-                }
             }
         }
 
@@ -330,7 +310,7 @@
         function processNext() {
             if (wordFailedThisRound) {
                 missedWordsQueue.push({
-                    wordObj: currentWordObj,
+                    word: currentWord,
                     errorIndex: firstMistakeIndex > -1 ? firstMistakeIndex : 0
                 });
             }
@@ -360,7 +340,7 @@
 
         function generateDistractors(reviewItem) {
             let options = new Set();
-            let targetWord = reviewItem.wordObj.word.toUpperCase();
+            let targetWord = reviewItem.word;
             options.add(targetWord); 
             
             let expectedLetter = targetWord[reviewItem.errorIndex];
@@ -385,8 +365,7 @@
             document.getElementById('nextReviewBtn').style.display = 'none';
             
             let currentReview = missedWordsQueue[reviewIndex];
-            currentWordObj = currentReview.wordObj; 
-            currentWord = currentWordObj.word.toUpperCase();
+            currentWord = currentReview.word;
             
             let options = generateDistractors(currentReview);
             
@@ -427,8 +406,8 @@
         function nextReview() {
             reviewIndex++;
             if (reviewIndex >= missedWordsQueue.length) {
-                // Return to spelling phase with ONLY the missed objects
-                currentQueue = missedWordsQueue.map(item => item.wordObj);
+                // Return to spelling phase with ONLY the missed words
+                currentQueue = missedWordsQueue.map(item => item.word);
                 startSpellingPhase();
             } else {
                 loadReviewWord();
