@@ -71,15 +71,15 @@
         }
         #strategyArea {
             margin-top: 25px;
-            padding: 15px;
+            padding: 20px;
             background-color: #fff9c4;
             border-radius: 10px;
             border: 2px dashed #fbc02d;
             display: none;
         }
         .strategy-title {
-            font-size: 20px;
-            color: #f57f17;
+            font-size: 22px;
+            color: #d84315;
             font-weight: bold;
             margin-bottom: 15px;
             text-transform: uppercase;
@@ -89,33 +89,27 @@
             margin-top: 20px;
         }
         
-        /* Strategy CSS Drawing */
-        .equal-groups-container {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .group-circle {
-            border: 4px solid #1e90ff;
-            border-radius: 50%;
-            padding: 10px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-content: center;
-            width: 70px;
-            height: 70px;
-            background-color: #e3f2fd;
-        }
-        .item-dot {
-            width: 12px;
-            height: 12px;
-            background-color: #ff4500;
-            border-radius: 50%;
-            margin: 3px;
-        }
-        .math-text { font-size: 24px; color: #333; line-height: 1.5; font-weight: bold; }
+        /* Strategy 1 & 2: Equal Groups & Array */
+        .equal-groups-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; }
+        .group-circle { border: 4px solid #1e90ff; border-radius: 50%; padding: 10px; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; width: 70px; height: 70px; background-color: #e3f2fd; }
+        .item-dot { width: 14px; height: 14px; background-color: #ff4500; border-radius: 50%; margin: 3px; }
+        .array-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 8px; }
+        
+        /* Strategy 3: Strip Diagram */
+        .strip-container { display: flex; flex-direction: column; width: 90%; margin: 0 auto; border: 3px solid #333; border-radius: 8px; overflow: hidden; }
+        .strip-row { display: flex; width: 100%; border-bottom: 3px solid #333; background-color: white; }
+        .strip-row:last-child { border-bottom: none; }
+        .strip-box { flex: 1; border-right: 3px solid #333; text-align: center; padding: 15px 5px; font-weight: bold; font-size: 24px; color: #4b0082; }
+        .strip-box:last-child { border-right: none; }
+        .total-box { background-color: #e3f2fd; width: 100%; flex: none; }
+
+        /* Strategy 4: Number Line */
+        .number-line-wrap { display: flex; justify-content: center; align-items: flex-end; height: 70px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .hop-arc { min-width: 50px; height: 40px; border: 4px solid #1e90ff; border-bottom: none; border-radius: 60px 60px 0 0; text-align: center; color: #d84315; font-weight: bold; line-height: 5px; margin: 0 2px; position: relative; }
+        .hop-arc::after { content: '▼'; position: absolute; bottom: -12px; right: -8px; color: #1e90ff; font-size: 14px; transform: rotate(-45deg); }
+        .number-line-base { width: 100%; max-width: 500px; height: 6px; background-color: #333; margin: 0 auto; border-radius: 3px; position: relative; top: -5px; }
+
+        .math-text { font-size: 24px; color: #333; line-height: 1.5; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -142,13 +136,9 @@
     <div class="streak-container" id="streakDisplay">Streak: ⭐⭐⭐</div>
 
     <script>
-        // Game State Variables
         let currentLevel = 1;
         let streak = 0;
-        let mistakesThisProblem = 0;
         let currentProblem = {};
-        
-        // Audio Context for Synth sounds
         let audioCtx;
 
         function initAudio() {
@@ -178,10 +168,8 @@
 
         function generateProblem() {
             let minFactor, maxFactor;
-            
-            // Auto-leveling ranges
-            if (currentLevel === 1) { minFactor = 1; maxFactor = 5; }
-            else if (currentLevel === 2) { minFactor = 1; maxFactor = 10; }
+            if (currentLevel === 1) { minFactor = 2; maxFactor = 5; } // Start at 2 to make visuals better
+            else if (currentLevel === 2) { minFactor = 2; maxFactor = 10; }
             else { minFactor = 6; maxFactor = 12; }
 
             let factor1 = Math.floor(Math.random() * (maxFactor - minFactor + 1)) + minFactor;
@@ -189,25 +177,12 @@
             let isMultiplication = Math.random() > 0.5;
 
             if (isMultiplication) {
-                currentProblem = {
-                    type: 'multiply',
-                    num1: factor1,
-                    num2: factor2,
-                    answer: factor1 * factor2,
-                    text: `${factor1} × ${factor2} = ?`
-                };
+                currentProblem = { type: 'multiply', num1: factor1, num2: factor2, answer: factor1 * factor2, text: `${factor1} × ${factor2} = ?` };
             } else {
                 let product = factor1 * factor2;
-                currentProblem = {
-                    type: 'divide',
-                    num1: product,
-                    num2: factor1,
-                    answer: factor2,
-                    text: `${product} ÷ ${factor1} = ?`
-                };
+                currentProblem = { type: 'divide', num1: product, num2: factor1, answer: factor2, text: `${product} ÷ ${factor1} = ?` };
             }
 
-            mistakesThisProblem = 0;
             updateUI();
         }
 
@@ -226,8 +201,6 @@
             
             let levelNames = ["Level 1: The Basics", "Level 2: Standard Master", "Level 3: Expert 12s"];
             document.getElementById('levelBadge').innerText = levelNames[currentLevel - 1];
-            
-            // Auto-focus input on iPads
             document.getElementById('answerInput').focus();
         }
 
@@ -248,89 +221,127 @@
                 document.getElementById('nextBtn').style.display = 'inline-block';
                 document.getElementById('strategyArea').style.display = 'none';
 
-                if (mistakesThisProblem === 0) {
-                    streak++;
-                    if (streak >= 5 && currentLevel < 3) {
-                        currentLevel++;
-                        streak = 0;
-                        feedbackEl.innerText = "🎉 LEVEL UP! 🎉";
-                    }
+                streak++;
+                if (streak >= 5 && currentLevel < 3) {
+                    currentLevel++;
+                    streak = 0;
+                    feedbackEl.innerText = "🎉 LEVEL UP! 🎉";
                 }
             } else {
                 playWrongBuzz();
-                mistakesThisProblem++;
-                streak = 0; // Reset streak on miss
-                feedbackEl.innerText = "❌ Not quite! Let's break it down.";
+                streak = 0; 
+                feedbackEl.innerText = "❌ Let's check our strategies!";
                 feedbackEl.style.color = "#e91e63";
                 document.getElementById('answerInput').value = "";
                 document.getElementById('answerInput').focus();
                 
-                showStrategy();
+                showRandomStrategy();
             }
             
-            // Update stars instantly if streak resets
             let stars = "";
             for(let i=0; i<streak; i++) stars += "⭐";
             document.getElementById('streakDisplay').innerText = streak > 0 ? `Streak: ${stars}` : "Streak: 0";
         }
 
-        function showStrategy() {
+        function showRandomStrategy() {
             let stratArea = document.getElementById('strategyArea');
             let stratTitle = document.getElementById('strategyTitle');
             let stratVisual = document.getElementById('strategyVisual');
             
             stratArea.style.display = 'block';
 
-            if (mistakesThisProblem === 1) {
-                // Strategy 1: Repeated Addition / Subtraction
+            const strategies = ['repeated', 'equalGroups', 'array', 'stripDiagram', 'numberLine'];
+            const chosen = strategies[Math.floor(Math.random() * strategies.length)];
+            let html = "";
+
+            if (chosen === 'repeated') {
                 if (currentProblem.type === 'multiply') {
                     stratTitle.innerText = "Strategy: Repeated Addition";
                     let arr = [];
                     for(let i=0; i<currentProblem.num1; i++) arr.push(currentProblem.num2);
-                    stratVisual.innerHTML = `<div class='math-text'>${arr.join(" + ")} = ?</div>`;
+                    html = `<div class='math-text'>${arr.join(" + ")} = ?</div>`;
                 } else {
                     stratTitle.innerText = "Strategy: Repeated Subtraction";
-                    let html = "<div class='math-text'>";
+                    html = "<div class='math-text'>";
                     let current = currentProblem.num1;
                     for(let i=0; i<currentProblem.answer; i++) {
                         html += `${current} - ${currentProblem.num2} = ${current - currentProblem.num2}<br>`;
                         current -= currentProblem.num2;
                     }
-                    html += `We subtracted ${currentProblem.num2} until we hit 0. Count the lines!</div>`;
-                    stratVisual.innerHTML = html;
+                    html += `Subtract ${currentProblem.num2} until you hit 0. How many times did you subtract?</div>`;
                 }
-            } else {
-                // Strategy 2: Equal Groups Visuals
+            } 
+            else if (chosen === 'equalGroups') {
                 stratTitle.innerText = "Strategy: Equal Groups";
-                let groups = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.answer;
-                let itemsPerGroup = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.num2;
+                let groups = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.num2;
+                let items = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.answer;
                 
-                let html = "<div class='equal-groups-container'>";
-                // If it's division and she missed twice, we show the groups to help her visualize the "sharing"
+                html = `<div class='math-text' style='margin-bottom:10px;'>${groups} groups. Count the items inside!</div><div class='equal-groups-container'>`;
                 for(let i=0; i<groups; i++) {
                     html += "<div class='group-circle'>";
-                    for(let j=0; j<itemsPerGroup; j++) {
-                        html += "<div class='item-dot'></div>";
+                    if(currentProblem.type === 'multiply' || true){ // Always show dots to help count
+                         for(let j=0; j<items; j++) html += "<div class='item-dot'></div>";
                     }
                     html += "</div>";
                 }
-                html += "</div><br><div class='math-text'>Count the dots!</div>";
-                stratVisual.innerHTML = html;
+                html += "</div>";
             }
+            else if (chosen === 'array') {
+                stratTitle.innerText = "Strategy: Array";
+                let rows = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.num2;
+                let cols = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.answer;
+                
+                html = `<div class='math-text' style='margin-bottom:10px;'>${rows} rows. Count the dots!</div>`;
+                for(let r=0; r<rows; r++) {
+                    html += `<div class='array-row'>`;
+                    for(let c=0; c<cols; c++) {
+                        html += `<div class='item-dot' style='background-color:#4b0082; width:18px; height:18px;'></div>`;
+                    }
+                    html += `</div>`;
+                }
+            }
+            else if (chosen === 'stripDiagram') {
+                stratTitle.innerText = "Strategy: Strip Diagram";
+                if (currentProblem.type === 'multiply') {
+                    let boxes = "";
+                    for(let i=0; i<currentProblem.num1; i++) boxes += `<div class="strip-box">${currentProblem.num2}</div>`;
+                    html = `<div class="strip-container">
+                              <div class="strip-row">${boxes}</div>
+                              <div class="strip-row"><div class="strip-box total-box">Total: ?</div></div>
+                            </div>
+                            <div class='math-text'>Add the top boxes together!</div>`;
+                } else {
+                    let boxes = "";
+                    for(let i=0; i<currentProblem.num2; i++) boxes += `<div class="strip-box">?</div>`;
+                    html = `<div class="strip-container">
+                              <div class="strip-row"><div class="strip-box total-box">Total: ${currentProblem.num1}</div></div>
+                              <div class="strip-row">${boxes}</div>
+                            </div>
+                            <div class='math-text'>Split ${currentProblem.num1} evenly into ${currentProblem.num2} boxes!</div>`;
+                }
+            }
+            else if (chosen === 'numberLine') {
+                stratTitle.innerText = "Strategy: Number Line";
+                let hops = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.answer;
+                let hopSize = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.num2;
+                
+                html = `<div class='math-text'>Hop by ${hopSize}, ${currentProblem.type === 'multiply' ? hops : '?'} times!</div>
+                        <div class="number-line-wrap">`;
+                for(let i=0; i<hops; i++) {
+                    html += `<div class="hop-arc">${currentProblem.type === 'multiply' ? '+' : '-'}${hopSize}</div>`;
+                }
+                html += `</div><div class="number-line-base"></div>`;
+            }
+
+            stratVisual.innerHTML = html;
         }
 
-        function nextProblem() {
-            generateProblem();
-        }
+        function nextProblem() { generateProblem(); }
 
-        // Handle 'Enter' key on iPad keyboard
         document.getElementById('answerInput').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkAnswer();
-            }
+            if (e.key === 'Enter') checkAnswer();
         });
 
-        // Start the game on load
         window.onload = generateProblem;
     </script>
 </body>
