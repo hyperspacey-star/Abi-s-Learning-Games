@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abi's Strategy Station</title>
+    <style>
+        body { 
+            font-family: 'Comic Sans MS', Arial, sans-serif; 
+            padding: 20px; 
+            background-color: #f0f8ff; 
+            text-align: center; 
+            touch-action: manipulation;
+        }
+        h1 { color: #ff4500; font-size: 36px; margin-bottom: 5px; }
+        .level-badge { 
+            background-color: #1e90ff; 
+            color: white; 
+            padding: 5px 15px; 
+            border-radius: 20px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            display: inline-block; 
+            margin-bottom: 20px; 
+        }
+        .card { 
+            background-color: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin: 0 auto; 
+            max-width: 600px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15); 
+        }
+        #problemDisplay { 
+            font-size: 65px; 
+            font-weight: bold; 
+            color: #4b0082; 
+            margin: 20px 0; 
+            letter-spacing: 2px;
+        }
+        input[type="number"] { 
+            font-size: 40px; 
+            padding: 15px; 
+            text-align: center; 
+            width: 50%; 
+            border-radius: 10px; 
+            border: 4px solid #1e90ff; 
+            margin-bottom: 15px; 
+            -moz-appearance: textfield;
+        }
+        button { 
+            background-color: #32cd32; 
+            color: white; 
+            padding: 20px 40px; 
+            font-size: 26px; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            box-shadow: 0 5px 0 #228b22; 
+            width: 80%;
+            max-width: 300px;
+            margin-top: 10px;
+        }
+        button:active { transform: translateY(5px); box-shadow: none; }
+        #feedback { 
+            font-size: 26px; 
+            font-weight: bold; 
+            margin-top: 20px; 
+            min-height: 40px; 
+        }
+        #strategyArea {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #fff9c4;
+            border-radius: 10px;
+            border: 2px dashed #fbc02d;
+            display: none;
+        }
+        .strategy-title {
+            font-size: 20px;
+            color: #f57f17;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .streak-container {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        
+        /* Strategy CSS Drawing */
+        .equal-groups-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .group-circle {
+            border: 4px solid #1e90ff;
+            border-radius: 50%;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            width: 70px;
+            height: 70px;
+            background-color: #e3f2fd;
+        }
+        .item-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #ff4500;
+            border-radius: 50%;
+            margin: 3px;
+        }
+        .math-text { font-size: 24px; color: #333; line-height: 1.5; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Strategy Station 🚂</h1>
+    <div class="level-badge" id="levelBadge">Level 1: The Basics</div>
+
+    <div class="card">
+        <div id="problemDisplay">?</div>
+        
+        <input type="number" id="answerInput" pattern="\d*" placeholder="Tap to type">
+        <br>
+        <button id="submitBtn" onclick="checkAnswer()">Check It!</button>
+        <button id="nextBtn" onclick="nextProblem()" style="display: none; background-color: #1e90ff; box-shadow: 0 5px 0 #0d47a1;">Next Problem</button>
+        
+        <div id="feedback"></div>
+
+        <div id="strategyArea">
+            <div class="strategy-title" id="strategyTitle">Let's use a strategy!</div>
+            <div id="strategyVisual"></div>
+        </div>
+    </div>
+
+    <div class="streak-container" id="streakDisplay">Streak: ⭐⭐⭐</div>
+
+    <script>
+        // Game State Variables
+        let currentLevel = 1;
+        let streak = 0;
+        let mistakesThisProblem = 0;
+        let currentProblem = {};
+        
+        // Audio Context for Synth sounds
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(type, freq, dur) {
+            if (!audioCtx) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            osc.start();
+            osc.stop(audioCtx.currentTime + dur);
+        }
+
+        function playDing() { playTone('sine', 1000, 0.3); }
+        function playWrongBuzz() { playTone('sawtooth', 150, 0.2); }
+
+        function generateProblem() {
+            let minFactor, maxFactor;
+            
+            // Auto-leveling ranges
+            if (currentLevel === 1) { minFactor = 1; maxFactor = 5; }
+            else if (currentLevel === 2) { minFactor = 1; maxFactor = 10; }
+            else { minFactor = 6; maxFactor = 12; }
+
+            let factor1 = Math.floor(Math.random() * (maxFactor - minFactor + 1)) + minFactor;
+            let factor2 = Math.floor(Math.random() * (maxFactor - minFactor + 1)) + minFactor;
+            let isMultiplication = Math.random() > 0.5;
+
+            if (isMultiplication) {
+                currentProblem = {
+                    type: 'multiply',
+                    num1: factor1,
+                    num2: factor2,
+                    answer: factor1 * factor2,
+                    text: `${factor1} × ${factor2} = ?`
+                };
+            } else {
+                let product = factor1 * factor2;
+                currentProblem = {
+                    type: 'divide',
+                    num1: product,
+                    num2: factor1,
+                    answer: factor2,
+                    text: `${product} ÷ ${factor1} = ?`
+                };
+            }
+
+            mistakesThisProblem = 0;
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('problemDisplay').innerText = currentProblem.text;
+            document.getElementById('answerInput').value = "";
+            document.getElementById('answerInput').style.display = 'inline-block';
+            document.getElementById('submitBtn').style.display = 'inline-block';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('feedback').innerText = "";
+            document.getElementById('strategyArea').style.display = 'none';
+            
+            let stars = "";
+            for(let i=0; i<streak; i++) stars += "⭐";
+            document.getElementById('streakDisplay').innerText = streak > 0 ? `Streak: ${stars}` : "Streak: 0";
+            
+            let levelNames = ["Level 1: The Basics", "Level 2: Standard Master", "Level 3: Expert 12s"];
+            document.getElementById('levelBadge').innerText = levelNames[currentLevel - 1];
+            
+            // Auto-focus input on iPads
+            document.getElementById('answerInput').focus();
+        }
+
+        function checkAnswer() {
+            initAudio();
+            let guess = parseInt(document.getElementById('answerInput').value);
+            let feedbackEl = document.getElementById('feedback');
+
+            if (isNaN(guess)) return;
+
+            if (guess === currentProblem.answer) {
+                playDing();
+                feedbackEl.innerText = "✅ Excellent!";
+                feedbackEl.style.color = "#32cd32";
+                
+                document.getElementById('answerInput').style.display = 'none';
+                document.getElementById('submitBtn').style.display = 'none';
+                document.getElementById('nextBtn').style.display = 'inline-block';
+                document.getElementById('strategyArea').style.display = 'none';
+
+                if (mistakesThisProblem === 0) {
+                    streak++;
+                    if (streak >= 5 && currentLevel < 3) {
+                        currentLevel++;
+                        streak = 0;
+                        feedbackEl.innerText = "🎉 LEVEL UP! 🎉";
+                    }
+                }
+            } else {
+                playWrongBuzz();
+                mistakesThisProblem++;
+                streak = 0; // Reset streak on miss
+                feedbackEl.innerText = "❌ Not quite! Let's break it down.";
+                feedbackEl.style.color = "#e91e63";
+                document.getElementById('answerInput').value = "";
+                document.getElementById('answerInput').focus();
+                
+                showStrategy();
+            }
+            
+            // Update stars instantly if streak resets
+            let stars = "";
+            for(let i=0; i<streak; i++) stars += "⭐";
+            document.getElementById('streakDisplay').innerText = streak > 0 ? `Streak: ${stars}` : "Streak: 0";
+        }
+
+        function showStrategy() {
+            let stratArea = document.getElementById('strategyArea');
+            let stratTitle = document.getElementById('strategyTitle');
+            let stratVisual = document.getElementById('strategyVisual');
+            
+            stratArea.style.display = 'block';
+
+            if (mistakesThisProblem === 1) {
+                // Strategy 1: Repeated Addition / Subtraction
+                if (currentProblem.type === 'multiply') {
+                    stratTitle.innerText = "Strategy: Repeated Addition";
+                    let arr = [];
+                    for(let i=0; i<currentProblem.num1; i++) arr.push(currentProblem.num2);
+                    stratVisual.innerHTML = `<div class='math-text'>${arr.join(" + ")} = ?</div>`;
+                } else {
+                    stratTitle.innerText = "Strategy: Repeated Subtraction";
+                    let html = "<div class='math-text'>";
+                    let current = currentProblem.num1;
+                    for(let i=0; i<currentProblem.answer; i++) {
+                        html += `${current} - ${currentProblem.num2} = ${current - currentProblem.num2}<br>`;
+                        current -= currentProblem.num2;
+                    }
+                    html += `We subtracted ${currentProblem.num2} until we hit 0. Count the lines!</div>`;
+                    stratVisual.innerHTML = html;
+                }
+            } else {
+                // Strategy 2: Equal Groups Visuals
+                stratTitle.innerText = "Strategy: Equal Groups";
+                let groups = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.answer;
+                let itemsPerGroup = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.num2;
+                
+                let html = "<div class='equal-groups-container'>";
+                // If it's division and she missed twice, we show the groups to help her visualize the "sharing"
+                for(let i=0; i<groups; i++) {
+                    html += "<div class='group-circle'>";
+                    for(let j=0; j<itemsPerGroup; j++) {
+                        html += "<div class='item-dot'></div>";
+                    }
+                    html += "</div>";
+                }
+                html += "</div><br><div class='math-text'>Count the dots!</div>";
+                stratVisual.innerHTML = html;
+            }
+        }
+
+        function nextProblem() {
+            generateProblem();
+        }
+
+        // Handle 'Enter' key on iPad keyboard
+        document.getElementById('answerInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // Start the game on load
+        window.onload = generateProblem;
+    </script>
+</body>
+</html>
