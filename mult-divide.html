@@ -28,7 +28,7 @@
             padding: 30px; 
             border-radius: 15px; 
             margin: 0 auto; 
-            max-width: 600px; 
+            max-width: 650px; 
             box-shadow: 0 8px 16px rgba(0,0,0,0.15); 
         }
         #problemDisplay { 
@@ -84,18 +84,17 @@
             margin-bottom: 15px;
             text-transform: uppercase;
         }
-        .streak-container {
-            font-size: 24px;
-            margin-top: 20px;
-        }
+        .streak-container { font-size: 24px; margin-top: 20px; }
         
-        /* Strategy 1 & 2: Equal Groups & Array */
+        /* Strategy Visuals CSS */
         .equal-groups-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; }
         .group-circle { border: 4px solid #1e90ff; border-radius: 50%; padding: 10px; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; width: 70px; height: 70px; background-color: #e3f2fd; }
         .item-dot { width: 14px; height: 14px; background-color: #ff4500; border-radius: 50%; margin: 3px; }
-        .array-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 8px; }
         
-        /* Strategy 3: Strip Diagram */
+        .array-container { display: inline-block; background: white; padding: 15px; border-radius: 10px; border: 2px solid #ccc; }
+        .array-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 8px; }
+        .array-row:last-child { margin-bottom: 0; }
+        
         .strip-container { display: flex; flex-direction: column; width: 90%; margin: 0 auto; border: 3px solid #333; border-radius: 8px; overflow: hidden; }
         .strip-row { display: flex; width: 100%; border-bottom: 3px solid #333; background-color: white; }
         .strip-row:last-child { border-bottom: none; }
@@ -103,13 +102,8 @@
         .strip-box:last-child { border-right: none; }
         .total-box { background-color: #e3f2fd; width: 100%; flex: none; }
 
-        /* Strategy 4: Number Line */
-        .number-line-wrap { display: flex; justify-content: center; align-items: flex-end; height: 70px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; }
-        .hop-arc { min-width: 50px; height: 40px; border: 4px solid #1e90ff; border-bottom: none; border-radius: 60px 60px 0 0; text-align: center; color: #d84315; font-weight: bold; line-height: 5px; margin: 0 2px; position: relative; }
-        .hop-arc::after { content: '▼'; position: absolute; bottom: -12px; right: -8px; color: #1e90ff; font-size: 14px; transform: rotate(-45deg); }
-        .number-line-base { width: 100%; max-width: 500px; height: 6px; background-color: #333; margin: 0 auto; border-radius: 3px; position: relative; top: -5px; }
-
-        .math-text { font-size: 24px; color: #333; line-height: 1.5; font-weight: bold; margin-top: 10px; }
+        .math-text { font-size: 24px; color: #333; line-height: 1.5; font-weight: bold; margin-bottom: 15px; }
+        .svg-container { width: 100%; overflow-x: auto; background: white; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -139,6 +133,7 @@
         let currentLevel = 1;
         let streak = 0;
         let currentProblem = {};
+        let strategyIndex = 0; // Tracks which strategy is next
         let audioCtx;
 
         function initAudio() {
@@ -168,7 +163,7 @@
 
         function generateProblem() {
             let minFactor, maxFactor;
-            if (currentLevel === 1) { minFactor = 2; maxFactor = 5; } // Start at 2 to make visuals better
+            if (currentLevel === 1) { minFactor = 2; maxFactor = 5; } 
             else if (currentLevel === 2) { minFactor = 2; maxFactor = 10; }
             else { minFactor = 6; maxFactor = 12; }
 
@@ -235,7 +230,7 @@
                 document.getElementById('answerInput').value = "";
                 document.getElementById('answerInput').focus();
                 
-                showRandomStrategy();
+                showNextStrategy();
             }
             
             let stars = "";
@@ -243,15 +238,20 @@
             document.getElementById('streakDisplay').innerText = streak > 0 ? `Streak: ${stars}` : "Streak: 0";
         }
 
-        function showRandomStrategy() {
+        function showNextStrategy() {
             let stratArea = document.getElementById('strategyArea');
             let stratTitle = document.getElementById('strategyTitle');
             let stratVisual = document.getElementById('strategyVisual');
             
             stratArea.style.display = 'block';
 
+            // Sequential array of strategies
             const strategies = ['repeated', 'equalGroups', 'array', 'stripDiagram', 'numberLine'];
-            const chosen = strategies[Math.floor(Math.random() * strategies.length)];
+            const chosen = strategies[strategyIndex];
+            
+            // Move to the next strategy for the next time she misses, looping back to 0 if at the end
+            strategyIndex = (strategyIndex + 1) % strategies.length;
+
             let html = "";
 
             if (chosen === 'repeated') {
@@ -268,7 +268,7 @@
                         html += `${current} - ${currentProblem.num2} = ${current - currentProblem.num2}<br>`;
                         current -= currentProblem.num2;
                     }
-                    html += `Subtract ${currentProblem.num2} until you hit 0. How many times did you subtract?</div>`;
+                    html += `<br>Subtract ${currentProblem.num2} until you hit 0. How many times did you subtract?</div>`;
                 }
             } 
             else if (chosen === 'equalGroups') {
@@ -276,12 +276,10 @@
                 let groups = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.num2;
                 let items = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.answer;
                 
-                html = `<div class='math-text' style='margin-bottom:10px;'>${groups} groups. Count the items inside!</div><div class='equal-groups-container'>`;
+                html = `<div class='math-text'>${groups} groups. Count the dots inside!</div><div class='equal-groups-container'>`;
                 for(let i=0; i<groups; i++) {
                     html += "<div class='group-circle'>";
-                    if(currentProblem.type === 'multiply' || true){ // Always show dots to help count
-                         for(let j=0; j<items; j++) html += "<div class='item-dot'></div>";
-                    }
+                    for(let j=0; j<items; j++) html += "<div class='item-dot'></div>";
                     html += "</div>";
                 }
                 html += "</div>";
@@ -291,7 +289,7 @@
                 let rows = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.num2;
                 let cols = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.answer;
                 
-                html = `<div class='math-text' style='margin-bottom:10px;'>${rows} rows. Count the dots!</div>`;
+                html = `<div class='math-text'>${rows} rows. Count the dots!</div><div class='array-container'>`;
                 for(let r=0; r<rows; r++) {
                     html += `<div class='array-row'>`;
                     for(let c=0; c<cols; c++) {
@@ -299,38 +297,75 @@
                     }
                     html += `</div>`;
                 }
+                html += `</div>`;
             }
             else if (chosen === 'stripDiagram') {
                 stratTitle.innerText = "Strategy: Strip Diagram";
                 if (currentProblem.type === 'multiply') {
                     let boxes = "";
                     for(let i=0; i<currentProblem.num1; i++) boxes += `<div class="strip-box">${currentProblem.num2}</div>`;
-                    html = `<div class="strip-container">
+                    html = `<div class='math-text'>Add the top boxes together!</div>
+                            <div class="strip-container">
                               <div class="strip-row">${boxes}</div>
                               <div class="strip-row"><div class="strip-box total-box">Total: ?</div></div>
-                            </div>
-                            <div class='math-text'>Add the top boxes together!</div>`;
+                            </div>`;
                 } else {
                     let boxes = "";
                     for(let i=0; i<currentProblem.num2; i++) boxes += `<div class="strip-box">?</div>`;
-                    html = `<div class="strip-container">
+                    html = `<div class='math-text'>Split ${currentProblem.num1} evenly into ${currentProblem.num2} boxes!</div>
+                            <div class="strip-container">
                               <div class="strip-row"><div class="strip-box total-box">Total: ${currentProblem.num1}</div></div>
                               <div class="strip-row">${boxes}</div>
-                            </div>
-                            <div class='math-text'>Split ${currentProblem.num1} evenly into ${currentProblem.num2} boxes!</div>`;
+                            </div>`;
                 }
             }
             else if (chosen === 'numberLine') {
                 stratTitle.innerText = "Strategy: Number Line";
+                let product = currentProblem.type === 'multiply' ? currentProblem.answer : currentProblem.num1;
+                let hopSize = currentProblem.num2;
                 let hops = currentProblem.type === 'multiply' ? currentProblem.num1 : currentProblem.answer;
-                let hopSize = currentProblem.type === 'multiply' ? currentProblem.num2 : currentProblem.num2;
                 
-                html = `<div class='math-text'>Hop by ${hopSize}, ${currentProblem.type === 'multiply' ? hops : '?'} times!</div>
-                        <div class="number-line-wrap">`;
-                for(let i=0; i<hops; i++) {
-                    html += `<div class="hop-arc">${currentProblem.type === 'multiply' ? '+' : '-'}${hopSize}</div>`;
+                let spacing = 25; 
+                let svgWidth = (product * spacing) + 40;
+                
+                html = `<div class='math-text'>Hop by ${hopSize}s!</div>`;
+                html += `<div class='svg-container'><svg width="${svgWidth}" height="120" viewBox="-20 0 ${svgWidth} 120">`;
+                
+                html += `<line x1="0" y1="80" x2="${product * spacing}" y2="80" stroke="#333" stroke-width="3"/>`;
+                
+                for(let i=0; i<=product; i++) {
+                    let x = i * spacing;
+                    let isTarget = (i % hopSize === 0);
+                    
+                    if (isTarget) {
+                        html += `<line x1="${x}" y1="70" x2="${x}" y2="80" stroke="#d84315" stroke-width="4"/>`;
+                        html += `<text x="${x}" y="105" text-anchor="middle" font-weight="bold" font-size="18" fill="#d84315">${i}</text>`;
+                    } else {
+                        html += `<line x1="${x}" y1="75" x2="${x}" y2="80" stroke="#888" stroke-width="2"/>`;
+                        html += `<text x="${x}" y="95" text-anchor="middle" font-size="12" fill="#888">${i}</text>`;
+                    }
                 }
-                html += `</div><div class="number-line-base"></div>`;
+                
+                for(let i=0; i<hops; i++) {
+                    let startX, endX;
+                    if (currentProblem.type === 'multiply') {
+                        startX = (i * hopSize) * spacing;
+                        endX = ((i+1) * hopSize) * spacing;
+                    } else {
+                        startX = (product - (i * hopSize)) * spacing;
+                        endX = (product - ((i+1) * hopSize)) * spacing;
+                    }
+                    
+                    let midX = (startX + endX) / 2;
+                    let curveHeight = 30; 
+                    
+                    html += `<path d="M ${startX} 80 Q ${midX} ${curveHeight} ${endX} 80" fill="transparent" stroke="#1e90ff" stroke-width="3" stroke-dasharray="5,5"/>`;
+                    
+                    let arrowPoint = currentProblem.type === 'multiply' ? `${endX},80 ${endX-7},70 ${endX+7},70` : `${endX},80 ${endX-7},70 ${endX+7},70`;
+                    html += `<polygon points="${arrowPoint}" fill="#1e90ff" transform="rotate(${currentProblem.type === 'multiply' ? 25 : -25} ${endX} 80)"/>`;
+                }
+                
+                html += `</svg></div>`;
             }
 
             stratVisual.innerHTML = html;
