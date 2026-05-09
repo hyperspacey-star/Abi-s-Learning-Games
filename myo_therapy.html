@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Myo-Therapy Routine</title>
+    <style>
+        body { 
+            font-family: 'Comic Sans MS', Arial, sans-serif; 
+            padding: 20px; 
+            background-color: #e0f7fa; 
+            text-align: center; 
+            color: #333;
+            touch-action: manipulation;
+        }
+        h1 { color: #00838f; font-size: 36px; margin-bottom: 5px; }
+        .card { 
+            background-color: white; 
+            padding: 30px; 
+            border-radius: 20px; 
+            margin: 20px auto; 
+            max-width: 600px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15); 
+        }
+        button { 
+            color: white; 
+            padding: 20px 40px; 
+            font-size: 28px; 
+            border: none; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+        button:active { 
+            transform: translateY(5px); 
+            box-shadow: none !important; 
+        }
+        
+        .btn-start { background-color: #00bcd4; box-shadow: 0 5px 0 #00838f; }
+        .btn-go { background-color: #ff9800; box-shadow: 0 5px 0 #e65100; display: none; font-size: 36px; }
+        .btn-next { background-color: #4caf50; box-shadow: 0 5px 0 #2e7d32; display: none; }
+        
+        #routineArea, #endScreen { display: none; }
+        #exerciseTitle { font-size: 36px; color: #ff6f00; margin-bottom: 20px; min-height: 50px; }
+        #instructionText { font-size: 24px; color: #555; margin-bottom: 30px; min-height: 80px; }
+        
+        #timerDisplay { font-size: 80px; font-weight: bold; color: #d32f2f; margin: 20px 0; font-family: monospace; display: none; }
+        #audioStatus { font-size: 20px; color: #00838f; font-weight: bold; margin: 20px 0; display: none; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #eceff1;
+            border-radius: 10px;
+            margin-top: 20px;
+            height: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #00bcd4;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>👅 Myo-Therapy Routine</h1>
+
+    <div id="startScreen" class="card">
+        <h2>Ready for your exercises?</h2>
+        <p style="font-size: 20px; color: #666;">Turn your volume up!</p>
+        <button class="btn-start" onclick="startRoutine()">▶️ Start Routine</button>
+    </div>
+
+    <div id="routineArea" class="card">
+        <h2 id="exerciseTitle">Exercise Title</h2>
+        <div id="instructionText">Instructions will appear here.</div>
+        
+        <div id="audioStatus">🔊 Listen to instructions...</div>
+        <div id="timerDisplay">00:00</div>
+        
+        <button id="goBtn" class="btn-go" onclick="startAction()">🟢 GO!</button>
+        <button id="nextBtn" class="btn-next" onclick="nextExercise()">Next Exercise ➡️</button>
+        
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <p id="stepCounter" style="color: #888; margin-top: 10px;">Step 1 of 9</p>
+    </div>
+
+    <div id="endScreen" class="card">
+        <h1 style="font-size: 50px;">🎉 All Done! 🎉</h1>
+        <h2>Great job completing your therapy!</h2>
+        <button class="btn-start" onclick="location.reload()">🔄 Restart</button>
+    </div>
+
+    <script>
+        // The Routine Database
+        const routine = [
+            {
+                title: "Toothbrush / Foam Brush",
+                instruction: "Rub your tip of tongue, rub your spot palate with the foam brush, place tongue tip on spot, close your teeth and lips and breathe through your nose 3 times.",
+                audio: "audio/01_toothbrush.mp3",
+                type: "manual"
+            },
+            {
+                title: "Parents Delight / Lip Stick",
+                instruction: "Get ready for Parent's Delight. Put on your lip stick, close your lips gently, and hold this perfect posture for 5 minutes.",
+                audio: "audio/02_parents_delight.mp3",
+                type: "timer",
+                timeInSeconds: 300 // 5 minutes
+            },
+            {
+                title: "Slow Clicks",
+                instruction: "Time for slow clicks. Suction your tongue completely to the roof of your mouth, open wide, and click. Do this slowly for 2 minutes.",
+                audio: "audio/03_slow_clicks.mp3",
+                type: "timer",
+                timeInSeconds: 120 // 2 minutes
+            },
+            {
+                title: "The Tiny Oyster",
+                instruction: "Get ready for The Tiny Oyster. Hold that tongue tight!",
+                audio: "audio/04_tiny_oyster.mp3",
+                type: "countdown",
+                timeInSeconds: 10
+            },
+            {
+                title: "Fat Tongue / Skinny Tongue",
+                instruction: "Let's do Fat Tongue, Skinny Tongue. Stretch it out wide, then make it pointy.",
+                audio: "audio/05_fat_tongue.mp3",
+                type: "countdown",
+                timeInSeconds: 10
+            },
+            {
+                title: "K & G Sounds",
+                instruction: "Time for K and G sounds. Keep your tongue tip down and use the back of your tongue. Kah. Gah.",
+                audio: "audio/06_kg_sounds.mp3",
+                type: "countdown",
+                timeInSeconds: 10
+            },
+            {
+                title: "Elastic Hold",
+                instruction: "Time for the elastic hold. Place the elastic on your tongue tip, find your spot, and swallow. We will hold this for 15 minutes.",
+                audio: "audio/07_elastic_hold.mp3",
+                type: "timer",
+                timeInSeconds: 900 // 15 minutes
+            },
+            {
+                title: "The Shrimp's Walk",
+                instruction: "Get ready for The Shrimp's Walk. Let's do this perfectly.",
+                audio: "audio/08_shrimps_walk.mp3",
+                type: "countdown",
+                timeInSeconds: 10
+            },
+            {
+                title: "Tongue Points",
+                instruction: "Last exercise! Tongue points. Make your tongue as sharp and pointy as you can.",
+                audio: "audio/09_tongue_points.mp3",
+                type: "manual"
+            }
+        ];
+
+        let currentIndex = 0;
+        let timerInterval;
+        let currentAudioPlayer = null;
+        let preferredVoice = null;
+
+        // Load the iPad's voice for the countdown
+        function loadVoices() {
+            let voices = window.speechSynthesis.getVoices();
+            preferredVoice = 
+                voices.find(v => v.name.includes("Google US English")) ||
+                voices.find(v => v.name.includes("Samantha")) || 
+                voices.find(v => v.name.includes("Alex")) ||
+                voices[0];
+        }
+
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        } else {
+            loadVoices();
+        }
+
+        // iPad text-to-speech function for the numbers
+        function speakCountdown(text, rate = 0.8, onEndCallback = null) {
+            window.speechSynthesis.cancel();
+            let utterance = new SpeechSynthesisUtterance(text);
+            if (preferredVoice) utterance.voice = preferredVoice;
+            utterance.rate = rate; 
+            
+            if (onEndCallback) {
+                utterance.onend = onEndCallback;
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Play the Google Studio MP3 instructions
+        function playAudio(filename, onEndCallback) {
+            if (currentAudioPlayer) {
+                currentAudioPlayer.pause();
+                currentAudioPlayer.currentTime = 0;
+            }
+            currentAudioPlayer = new Audio(filename);
+            
+            if (onEndCallback) {
+                currentAudioPlayer.onended = onEndCallback;
+            }
+            
+            currentAudioPlayer.play().catch(e => {
+                console.error("Could not play audio. Check if file exists:", filename);
+                if (onEndCallback) setTimeout(onEndCallback, 2000); 
+            });
+        }
+
+        function startRoutine() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('routineArea').style.display = 'block';
+            
+            // iPad TTS unlock hack
+            let dummy = new SpeechSynthesisUtterance("");
+            dummy.volume = 0;
+            window.speechSynthesis.speak(dummy);
+
+            currentIndex = 0;
+            loadExercise();
+        }
+
+        function loadExercise() {
+            clearInterval(timerInterval);
+            document.getElementById('goBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('timerDisplay').style.display = 'none';
+            document.getElementById('audioStatus').style.display = 'block';
+            
+            let current = routine[currentIndex];
+            
+            document.getElementById('exerciseTitle').innerText = current.title;
+            document.getElementById('instructionText').innerText = current.instruction;
+            document.getElementById('stepCounter').innerText = `Step ${currentIndex + 1} of ${routine.length}`;
+            
+            let progressPct = ((currentIndex) / routine.length) * 100;
+            document.getElementById('progressFill').style.width = progressPct + '%';
+
+            // Play MP3, then show either GO or NEXT
+            playAudio(current.audio, () => {
+                document.getElementById('audioStatus').style.display = 'none';
+                
+                if (current.type === "manual") {
+                    document.getElementById('nextBtn').style.display = 'block';
+                } else {
+                    document.getElementById('goBtn').style.display = 'block';
+                }
+            });
+        }
+
+        // Triggered when she taps the GO button
+        function startAction() {
+            document.getElementById('goBtn').style.display = 'none';
+            let current = routine[currentIndex];
+            
+            if (current.type === "timer") {
+                startVisualTimer(current.timeInSeconds);
+            } 
+            else if (current.type === "countdown") {
+                startSpokenCountdown(current.timeInSeconds);
+            }
+        }
+
+        function startVisualTimer(totalSeconds) {
+            let timerEl = document.getElementById('timerDisplay');
+            timerEl.style.display = 'block';
+            
+            let timeLeft = totalSeconds;
+            updateTimerDisplay(timeLeft);
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay(timeLeft);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    playAudio("audio/timer_done.mp3");
+                    document.getElementById('nextBtn').style.display = 'block';
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay(seconds) {
+            let m = Math.floor(seconds / 60);
+            let s = seconds % 60;
+            document.getElementById('timerDisplay').innerText = 
+                (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+        }
+
+        function startSpokenCountdown(startNum) {
+            let timerEl = document.getElementById('timerDisplay');
+            timerEl.style.display = 'block';
+            timerEl.innerText = startNum;
+            
+            let currentNum = startNum;
+            
+            function countNext() {
+                if (currentNum > 0) {
+                    timerEl.innerText = currentNum;
+                    speakCountdown(currentNum.toString(), 0.8, () => {
+                        currentNum--;
+                        setTimeout(countNext, 600); // Small pause for rhythm
+                    });
+                } else {
+                    timerEl.innerText = "0";
+                    playAudio("audio/timer_done.mp3"); // Play the "Time is up!" file
+                    document.getElementById('nextBtn').style.display = 'block';
+                }
+            }
+            
+            countNext();
+        }
+
+        function nextExercise() {
+            if (currentAudioPlayer) currentAudioPlayer.pause();
+            window.speechSynthesis.cancel();
+            
+            currentIndex++;
+            if (currentIndex >= routine.length) {
+                document.getElementById('routineArea').style.display = 'none';
+                document.getElementById('endScreen').style.display = 'block';
+                playAudio("audio/all_done.mp3");
+            } else {
+                loadExercise();
+            }
+        }
+    </script>
+</body>
+</html>
